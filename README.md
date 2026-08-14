@@ -1,6 +1,9 @@
 [English](README.en.md)
 
-# dsh-remotion
+`# dsh-remotion
+
+![npm version](https://img.shields.io/npm/v/dsh-remotion?label=npm&color=blue) ![npm downloads](https://img.shields.io/npm/dm/dsh-remotion) ![license](https://img.shields.io/npm/l/dsh-remotion) ![stars](https://img.shields.io/github/stars/STARDUSTLC666/dsh-remotion?style=social)
+
 
 DSH（DeepSeek Harness）视频创作技能插件：**安装即把 Remotion 官方移植技能注册进 DSH**（React 编程式视频：动画、音频、字幕、3D、图表、字体等，38 个规则文件）。
 
@@ -27,3 +30,4 @@ Node.js ≥ 20 + npx（npm registry）；渲染需 ffmpeg（Remotion 自带指�
 ## License
 
 MIT（移植编排）；技能内容版权归 Remotion。
+
