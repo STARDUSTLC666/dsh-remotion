@@ -1,0 +1,7 @@
+# dsh-remotion 组合包补丁：把Remotion 技能插件行插入 profile。
+# 插件加载即把技能注册进 ctx.skills（技能目录实时可见），无需配置。
+#
+- insert:
+    - id: remotion-skills
+      name: 'dsh-remotion'
+      config: {}
