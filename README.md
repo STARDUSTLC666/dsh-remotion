@@ -1,6 +1,8 @@
 [English](README.en.md)
 
-`# dsh-remotion
+# dsh-remotion
+
+> **在 20+ 个 agent 里写视频**：Remotion 官方技能，React 编程式视频。
 
 ![npm version](https://img.shields.io/npm/v/dsh-remotion?label=npm&color=blue) ![npm downloads](https://img.shields.io/npm/dm/dsh-remotion) ![license](https://img.shields.io/npm/l/dsh-remotion) ![stars](https://img.shields.io/github/stars/STARDUSTLC666/dsh-remotion?style=social)
 
