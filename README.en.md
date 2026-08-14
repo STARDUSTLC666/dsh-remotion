@@ -24,6 +24,21 @@ Node.js ≥ 20 + npx (npm registry); rendering needs ffmpeg (guided by the skill
 
 Ported from the official OpenAI Codex Remotion plugin cache: frontmatter converted to the DSH format, Codex-only `agents/` stripped, and rule references verified.
 
+## Multi-harness
+
+Skills use the open Agent Skills (SKILL.md) format — **not just DSH**. Copy the directories under `skills/` into another agent's skills directory:
+
+| Agent | Skills directory |
+| :-- | :-- |
+| Claude Code | `~/.claude/skills/` |
+| Cursor | `.cursor/skills/` (or project-local `skills/`) |
+| Gemini CLI | `~/.gemini/skills/` |
+| OpenAI Codex | `~/.codex/skills/` |
+
+Port once, use everywhere.
+
+
 ## License
 
 MIT for the porting arrangement; skill content copyright remains with Remotion.
+

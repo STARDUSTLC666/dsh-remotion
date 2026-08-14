@@ -27,7 +27,22 @@ Node.js ≥ 20 + npx（npm registry）；渲染需 ffmpeg（Remotion 自带指�
 
 技能移植自 OpenAI Codex 官方 Remotion 插件缓存：frontmatter 已转换为 DSH 格式，codex 专属 `agents/` 已剔除，规则引用逐一校验。
 
+## 跨平台使用
+
+技能采用开放的 Agent Skills（SKILL.md）格式，**不止 DSH 能用**——把 `skills/` 下的目录复制到其他 agent 的技能目录即可：
+
+| Agent | 技能目录 |
+| :-- | :-- |
+| Claude Code | `~/.claude/skills/` |
+| Cursor | `.cursor/skills/`（或项目内 `skills/`）|
+| Gemini CLI | `~/.gemini/skills/` |
+| OpenAI Codex | `~/.codex/skills/` |
+
+一次移植，处处可用。
+
+
 ## License
 
 MIT（移植编排）；技能内容版权归 Remotion。
+
 
