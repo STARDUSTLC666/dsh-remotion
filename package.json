@@ -37,7 +37,8 @@
     "deepseek-harness",
     "plugin",
     "skills",
-    "video"
+    "video",
+    "dsh-plugin"
   ],
   "license": "MIT",
   "engines": {
