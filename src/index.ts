@@ -12,6 +12,7 @@ import { join } from 'node:path'
 import YAML from 'yaml'
 
 /** cordis 服务注入：apply 里要用 ctx.skills，必须显式声明。 */
+export const name = 'remotion-skills'
 export const inject = ['skills']
 
 /** 技能注册定义（最小面）。 */
