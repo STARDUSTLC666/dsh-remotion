@@ -26,7 +26,7 @@ function makeFakeCtx() {
 }
 
 test('inject 声明 skills', () => {
-  assert.deepEqual(inject, ['skills'])
+  assert.deepEqual(inject, ['skills', 'tools'])
 })
 
 test('apply 注册 1 个技能且字段完整', () => {

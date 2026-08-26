@@ -1,6 +1,6 @@
 {
   "name": "dsh-remotion",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "DSH 视频创作技能插件：注册 Remotion 官方移植技能（React 编程式视频：动画/音频/字幕/3D/图表/字体，38 个规则文件），安装即用。",
   "type": "module",
   "main": "lib/index.js",
