@@ -11,6 +11,10 @@
 
 DSH（DeepSeek Harness）视频创作技能插件：**安装即把 Remotion 官方移植技能注册进 DSH**（React 编程式视频：动画、音频、字幕、3D、图表、字体等，38 个规则文件）。
 
+## 兼容性
+
+在 `@deepseek-ai/dsh@0.1.1-rc.2` 上验证（2026-08-26）。遵循 cordis 组合包补丁模型（`cordis.patch.yml` + `dsh.bundle.patch`），运行时不 import 任何 `@deepseek-ai/*` 内部模块。
+
 ## 安装
 
 ```bash
@@ -18,6 +22,15 @@ dsh plugin --profile web add dsh-remotion
 ```
 
 重启后说「用 Remotion 做个视频」即可触发。
+
+## 卸载
+
+```bash
+dsh plugin --profile web remove dsh-remotion
+```
+
+卸载后重启 Web 服务。如需彻底清理，可再手动删除自己 profile `cordis.patch.yml` 中覆盖的插件行。
+
 
 ## 技能内容
 
@@ -48,5 +61,3 @@ Node.js ≥ 20 + npx（npm registry）；渲染需 ffmpeg（Remotion 自带指�
 ## License
 
 MIT（移植编排）；技能内容版权归 Remotion。
-
-
