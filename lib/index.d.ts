@@ -22,8 +22,8 @@ export interface SkillsPluginContext {
     };
     on?(event: string, listener: () => void): () => void;
 }
-/** 随包分发的技能清单。 */
-export declare const SKILL_NAMES: readonly ["remotion"];
+/** 随包分发的技能清单（Remotion 官方 v4.0.519：总纲路由 + 11 个领域技能）。 */
+export declare const SKILL_NAMES: readonly ["remotion-best-practices", "remotion-captions", "remotion-create", "remotion-docs", "remotion-interactivity", "remotion-maps", "remotion-markup", "remotion-multimedia", "remotion-render", "remotion-saas", "remotion-studio", "remotion-upgrade"];
 /** 打包技能目录的绝对路径。 */
 export declare function bundledSkillsDir(): string;
 /** 检查随包技能资源完整性：每个技能的 SKILL.md 是否存在。 */

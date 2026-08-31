@@ -9,7 +9,7 @@
 [![Awesome DSH Plugin](https://awesome-dsh-plugin.com/badge.svg)](https://awesome-dsh-plugin.com)
 
 
-DSH（DeepSeek Harness）视频创作技能插件：**安装即把 Remotion 官方移植技能注册进 DSH**（React 编程式视频：动画、音频、字幕、3D、图表、字体等，38 个规则文件）。
+DSH（DeepSeek Harness）视频创作技能插件：**安装即把 Remotion 官方移植技能注册进 DSH**（React 编程式视频：动画、音频、字幕、3D、图表、字体等；同步 Remotion 官方 v4.0.519 的 12 技能结构）。
 
 ## 兼容性
 
@@ -34,7 +34,7 @@ dsh plugin --profile web remove dsh-remotion
 
 ## 技能内容
 
-- **remotion**：Remotion 最佳实践 + `rules/` 38 个规则文件（动画/音频/字幕/3D/图表/字体/GIF/Lottie/地图/转场…）
+- **remotion-best-practices**（总纲路由）+ 11 个领域技能（captions/create/docs/interactivity/maps/markup/multimedia/render/saas/studio/upgrade），同步自 Remotion 官方 v4.0.519
 
 ## 依赖
 

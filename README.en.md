@@ -6,7 +6,7 @@
 
 [![Awesome DSH Plugin](https://awesome-dsh-plugin.com/badge.svg)](https://awesome-dsh-plugin.com)
 
-DSH (DeepSeek Harness) video-creation skill plugin: installing it registers the official Remotion skill into DSH (programmatic video with React: animation, audio, captions, 3D, charts, fonts, and 38 rule files).
+DSH (DeepSeek Harness) video-creation skill plugin: installing it registers the official Remotion skill into DSH (programmatic video with React: animation, audio, captions, 3D, charts, fonts; synced with the official Remotion v4.0.519 twelve-skill structure).
 
 ## Compatibility
 
@@ -31,7 +31,7 @@ Then restart the web service. To clean up fully, also remove the plugin entry fr
 
 ## Contents
 
-- **remotion**: Remotion best practices plus `rules/` with 38 rule files (animation/audio/captions/3D/charts/fonts/GIFs/Lottie/maps/transitions...)
+- **remotion-best-practices** (router hub) + 11 domain skills (captions/create/docs/interactivity/maps/markup/multimedia/render/saas/studio/upgrade), synced from official Remotion v4.0.519
 
 ## Requirements
 
@@ -39,7 +39,7 @@ Node.js ≥ 20 + npx (npm registry); rendering needs ffmpeg (guided by the skill
 
 ## Porting notes
 
-Ported from the official OpenAI Codex Remotion plugin cache: frontmatter converted to the DSH format, Codex-only `agents/` stripped, and rule references verified.
+Synced from the official `remotion-dev/remotion` packages/skills (v4.0.519, 2026-08-31): hub symlinks materialized as real directories for cross-platform resolution.
 
 ## Multi-harness
 

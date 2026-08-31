@@ -29,12 +29,12 @@ test('inject 声明 skills', () => {
   assert.deepEqual(inject, ['skills', 'tools'])
 })
 
-test('apply 注册 1 个技能且字段完整', () => {
+test('apply 注册 12 个技能且字段完整', () => {
   const { ctx, registered } = makeFakeCtx()
   apply(ctx)
-  assert.equal(registered.length, 1)
+  assert.equal(registered.length, 12)
   const names = registered.map((s) => s.name).sort()
-  assert.deepEqual(names, ["remotion"])
+  assert.deepEqual(names, [...SKILL_NAMES].sort())
   for (const skill of registered) {
     assert.ok(skill.description.length > 20, skill.name + ' 有描述')
     assert.ok(skill.content.length > 200, skill.name + ' 有正文')
@@ -47,7 +47,7 @@ test('apply 注册 1 个技能且字段完整', () => {
 test('dispose 卸载全部技能', () => {
   const { ctx, registered, listeners } = makeFakeCtx()
   apply(ctx)
-  assert.equal(registered.length, 1)
+  assert.equal(registered.length, 12)
   for (const listener of listeners.dispose ?? []) listener()
   assert.equal(registered.length, 0)
 })
@@ -58,9 +58,9 @@ test('bundledSkillsDir 指向打包目录', () => {
 })
 
 test('parseSkillFile 处理真实文件', () => {
-  const text = readFileSync(join(bundledSkillsDir(), 'remotion', 'SKILL.md'), 'utf8')
+  const text = readFileSync(join(bundledSkillsDir(), 'remotion-best-practices', 'SKILL.md'), 'utf8')
   const parsed = parseSkillFile(text)
-  assert.equal(parsed.name, 'remotion')
+  assert.equal(parsed.name, 'remotion-best-practices')
   assert.ok(parsed.description.length > 10)
   assert.ok(parsed.content.includes('## ') || parsed.content.includes('# '))
 })

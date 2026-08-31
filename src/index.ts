@@ -31,8 +31,21 @@ export interface SkillsPluginContext {
   on?(event: string, listener: () => void): () => void
 }
 
-/** 随包分发的技能清单。 */
-export const SKILL_NAMES = ["remotion"] as const
+/** 随包分发的技能清单（Remotion 官方 v4.0.519：总纲路由 + 11 个领域技能）。 */
+export const SKILL_NAMES = [
+  "remotion-best-practices",
+  "remotion-captions",
+  "remotion-create",
+  "remotion-docs",
+  "remotion-interactivity",
+  "remotion-maps",
+  "remotion-markup",
+  "remotion-multimedia",
+  "remotion-render",
+  "remotion-saas",
+  "remotion-studio",
+  "remotion-upgrade",
+] as const
 
 /** 打包技能目录的绝对路径。 */
 export function bundledSkillsDir(): string {
