@@ -1,5 +1,7 @@
 [中文](README.md)
 
+![npm](https://img.shields.io/npm/v/dsh-remotion) ![downloads](https://img.shields.io/npm/dm/dsh-remotion) ![license](https://img.shields.io/github/license/STARDUSTLC666/dsh-remotion) ![stars](https://img.shields.io/github/stars/STARDUSTLC666/dsh-remotion?style=social)
+
 # dsh-remotion
 
 [![Awesome DSH Plugin](https://awesome-dsh-plugin.com/badge.svg)](https://awesome-dsh-plugin.com)
