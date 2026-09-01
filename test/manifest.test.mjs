@@ -43,5 +43,5 @@ test('技能目录随包分发', () => {
 test('名称与版本', () => {
   const pkg = require('../package.json')
   assert.equal(pkg.name, 'dsh-remotion')
-  assert.match(pkg.version, /^\d+\.\d+\.\d+$/)
+  assert.equal(pkg.version, '0.3.0')
 })
