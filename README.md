@@ -13,7 +13,7 @@ DSH（DeepSeek Harness）视频创作技能插件：**安装即把 Remotion 官�
 
 ## 兼容性
 
-对齐 `@deepseek-ai/dsh@0.1.3-alpha.1` 的技能注册契约（2026-09-05）。遵循 cordis 组合包补丁模型（`cordis.patch.yml` + `dsh.bundle.patch`），运行时不 import 任何 `@deepseek-ai/*` 内部模块。
+已在官方 `@deepseek-ai/dsh@0.1.5-rc.1`、Node `24.16.0` 上验证（2026-09-11）：18 个组件与 Modlens 同载，工具 schema、技能注册及离线只读调用检查通过。采用 `cordis.patch.yml` + `dsh.bundle.patch` 组合包模型。Node 要求与该版本 Harness 一致：22.19 及以上的 22.x，或 24 及以上。外部服务的实际业务操作需按各组件配置单独验证。
 
 ## 安装
 
