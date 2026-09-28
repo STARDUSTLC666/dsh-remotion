@@ -9,7 +9,7 @@
 [![Awesome DSH Plugin](https://awesome-dsh-plugin.com/badge.svg)](https://awesome-dsh-plugin.com)
 
 
-DSH（DeepSeek Harness）视频创作技能插件：**安装即把 Remotion 官方移植技能注册进 DSH**（React 编程式视频：动画、音频、字幕、3D、图表、字体等；同步 Remotion 官方 v4.0.519 的 12 技能结构）。
+DSH（DeepSeek Harness）视频创作技能插件：**安装即把 Remotion 官方移植技能注册进 DSH**（React 编程式视频：动画、音频、字幕、3D、图表、字体等；同步 Remotion 官方 v4.0.529 的 12 技能结构）。
 
 ## 兼容性
 
@@ -34,7 +34,7 @@ dsh plugin --profile web remove dsh-remotion
 
 ## 技能内容
 
-- **remotion-best-practices**（总纲路由）+ 11 个领域技能（captions/create/docs/interactivity/maps/markup/multimedia/render/saas/studio/upgrade），同步自 Remotion 官方 v4.0.519
+- **remotion-best-practices**（总纲路由）+ 11 个领域技能（captions/create/docs/interactivity/maps/markup/multimedia/render/saas/studio/upgrade），同步自 Remotion 官方 v4.0.529
 
 ## 依赖
 
@@ -42,7 +42,7 @@ Node.js ≥ 22 + npx（npm registry）；渲染需 ffmpeg（Remotion 自带指�
 
 ## 移植说明
 
-技能移植自 OpenAI Codex 官方 Remotion 插件缓存：frontmatter 已转换为 DSH 格式，codex 专属 `agents/` 已剔除，规则引用逐一校验。
+技能同步自官方 `remotion-dev/skills` 检出 v4.0.529（2026-09-25）：上游正文原样引入（含 `remotion-best-practices/`、`remotion-markup/` 下的内嵌引用副本），仅把 frontmatter 换成本包的 `name`/`description` + 上游 `version`；`scripts/sync-skills.mjs` 让移植可复现、可校验（`--check`）。
 
 ## 跨平台使用
 

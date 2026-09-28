@@ -1,0 +1,50 @@
+{
+  "remotion-best-practices": {
+    "name": "remotion-best-practices",
+    "description": "Router for all Remotion skills"
+  },
+  "remotion-captions": {
+    "name": "remotion-captions",
+    "description": "Transcribing, displaying and animating captions"
+  },
+  "remotion-create": {
+    "name": "remotion-create",
+    "description": "Create a new Remotion video"
+  },
+  "remotion-docs": {
+    "name": "remotion-docs",
+    "description": "Search Remotion documentation"
+  },
+  "remotion-interactivity": {
+    "name": "remotion-interactivity",
+    "description": "Structure Remotion markup for interactivity"
+  },
+  "remotion-maps": {
+    "name": "remotion-maps",
+    "description": "Remotion Map animation knowledge"
+  },
+  "remotion-markup": {
+    "name": "remotion-markup",
+    "description": "Content, animation and effects best practices"
+  },
+  "remotion-multimedia": {
+    "name": "remotion-multimedia",
+    "description": "Interacting with Mediabunny"
+  },
+  "remotion-render": {
+    "name": "remotion-render",
+    "description": "Export a Remotion video"
+  },
+  "remotion-saas": {
+    "name": "remotion-saas",
+    "description": "Build an app with Remotion"
+  },
+  "remotion-studio": {
+    "name": "remotion-studio",
+    "description": "Preview a Remotion video"
+  },
+  "remotion-upgrade": {
+    "name": "remotion-upgrade",
+    "description": "Upgrade Remotion, and related packages"
+  }
+}

@@ -6,7 +6,7 @@
 
 [![Awesome DSH Plugin](https://awesome-dsh-plugin.com/badge.svg)](https://awesome-dsh-plugin.com)
 
-DSH (DeepSeek Harness) video-creation skill plugin: installing it registers the official Remotion skill into DSH (programmatic video with React: animation, audio, captions, 3D, charts, fonts; synced with the official Remotion v4.0.519 twelve-skill structure).
+DSH (DeepSeek Harness) video-creation skill plugin: installing it registers the official Remotion skill into DSH (programmatic video with React: animation, audio, captions, 3D, charts, fonts; synced with the official Remotion v4.0.529 twelve-skill structure).
 
 ## Compatibility
 
@@ -31,7 +31,7 @@ Then restart the web service. To clean up fully, also remove the plugin entry fr
 
 ## Contents
 
-- **remotion-best-practices** (router hub) + 11 domain skills (captions/create/docs/interactivity/maps/markup/multimedia/render/saas/studio/upgrade), synced from official Remotion v4.0.519
+- **remotion-best-practices** (router hub) + 11 domain skills (captions/create/docs/interactivity/maps/markup/multimedia/render/saas/studio/upgrade), synced from official Remotion v4.0.529
 
 ## Requirements
 
@@ -39,7 +39,7 @@ Node.js ≥ 22 + npx (npm registry); rendering needs ffmpeg (guided by the skill
 
 ## Porting notes
 
-Synced from the official `remotion-dev/remotion` packages/skills (v4.0.519, 2026-08-31): hub symlinks materialized as real directories for cross-platform resolution.
+Synced from the official `remotion-dev/skills` checkout at v4.0.529 (2026-09-25): upstream skill bodies are vendored as-is, including the embedded reference copies under `remotion-best-practices/` and `remotion-markup/`, with `scripts/sync-skills.mjs` making the port repeatable and checkable. Only the frontmatter is ours (`name`/`description` plus the upstream `version`).
 
 ## Multi-harness
 
