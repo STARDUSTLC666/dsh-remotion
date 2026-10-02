@@ -1,7 +1,7 @@
 {
   "name": "dsh-remotion",
   "version": "0.3.4",
-  "description": "DSH 视频创作技能插件：注册 Remotion 官方 12 个技能（React 编程式视频：动画/音频/字幕/3D/地图/图表），安装即用。",
+  "description": "把 Remotion 的 React 视频创作技能接入 DSH。",
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -19,7 +19,9 @@
     "cordis.patch.yml",
     "README.md",
     "README.en.md",
-    "scripts"
+    "scripts",
+    "docs",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
