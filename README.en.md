@@ -2,6 +2,8 @@
 
 [中文](README.md)
 
+![dsh-remotion whale girl plugin cover](https://raw.githubusercontent.com/STARDUSTLC666/dsh-remotion/master/assets/cover-whale-girl.png)
+
 Bring Remotion React video creation skills into DSH.
 
 [![npm](https://img.shields.io/npm/v/dsh-remotion)](https://www.npmjs.com/package/dsh-remotion) [![downloads](https://img.shields.io/npm/dm/dsh-remotion)](https://www.npmjs.com/package/dsh-remotion)

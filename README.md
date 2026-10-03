@@ -2,6 +2,8 @@
 
 [English](README.en.md)
 
+![dsh-remotion 鲸鱼娘插件封面](https://raw.githubusercontent.com/STARDUSTLC666/dsh-remotion/master/assets/cover-whale-girl.png)
+
 把 Remotion 的 React 视频创作技能接入 DSH。
 
 [![npm](https://img.shields.io/npm/v/dsh-remotion)](https://www.npmjs.com/package/dsh-remotion) [![downloads](https://img.shields.io/npm/dm/dsh-remotion)](https://www.npmjs.com/package/dsh-remotion)
