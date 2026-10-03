@@ -18,6 +18,22 @@ dsh plugin --profile web remove dsh-remotion
 
 Then restart the web service. To clean up fully, also remove the plugin entry from your profile `cordis.patch.yml` if you overrode it.
 
+## Video workbench
+
+Open Settings → Remotion in DSH Web or Desktop.
+
+1. Create a video. Select title card, product card or slideshow; set title/body, canvas and 3–30 seconds, then save.
+2. Upload local PNG/JPEG copies, one MP3/WAV background audio and one muted MP4 background video. Limits: 20 MB each, 40 MB total. Slideshow follows upload order and needs at least two seconds per image.
+3. Explicitly prepare the environment. It downloads official CLI 4.0.532; installed Chrome is reused, with a browser download only when needed. You can continue editing during preparation. Check the [official Remotion license](https://www.remotion.dev/license) for your use case.
+4. Start official Studio and inspect the picture. Stop this preview before editing or exporting; no window opens automatically.
+5. Export, play and download MP4. Editing preserves earlier MP4s with a revision warning; export again for a new output.
+
+The editable ZIP includes source, data and media. Extract it, run npm install and npm run preview / render. Original template code is MIT; engines retain their own licenses. ZIP import is not yet available in settings.
+
+Projects and caches stay in DSH_HOME/data/dsh-remotion. Original assets and existing user projects are untouched. Closing settings preserves input within this page; saved projects survive restart, while active jobs stop with DSH. Jobs can be cancelled. Tools: remotion_project (list/create/get/update), remotion_render (prepare/preview/render/job/cancel). Updates/rendering need id/revision; job/cancel need job id.
+
+This is template editing, without a full timeline, transcription, TTS or cloud rendering. Default: 24 FPS, maximum 200 MB MP4. Preview listens on 127.0.0.1 only; other users on the same machine may still reach the service.
+
 ## Contents
 
 - **remotion-best-practices** (router hub) + 11 domain skills (captions/create/docs/interactivity/maps/markup/multimedia/render/saas/studio/upgrade), synced from official Remotion v4.0.529

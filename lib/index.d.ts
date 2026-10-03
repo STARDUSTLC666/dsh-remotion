@@ -1,4 +1,7 @@
 import { type SkillsPluginContext } from './skill-bundle.js';
+export { MediaWorkbench } from './media-workbench.js';
+export { MediaStore } from './media-store.js';
+export { MEDIA_TEMPLATES, MEDIA_VERSIONS } from './media-templates.js';
 export { parseSkillFile } from './skill-bundle.js';
 export type { SkillRegistration, SkillsPluginContext } from './skill-bundle.js';
 export declare const name = "remotion-skills";

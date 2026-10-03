@@ -18,6 +18,26 @@ dsh plugin --profile web remove dsh-remotion
 
 卸载后重启 Web 服务。如需彻底清理，可再手动删除自己 profile `cordis.patch.yml` 中覆盖的插件行。
 
+## 视频工作台
+
+在桌面或 Web 的「设置 → Remotion」中操作：
+
+1. 新建视频，选择标题卡、产品介绍或图文轮播，填写标题/正文、画幅和 3–30 秒时长，明确保存。
+2. 上传 PNG/JPEG、一个背景音频（MP3/WAV）、一个静音背景视频（MP4）的副本。每个文件最多 20 MB、总计 40 MB；轮播按上传顺序，每张至少两秒。
+3. 首次点击「准备渲染环境」。此时下载固定版本官方 CLI 4.0.532，优先使用已安装的 Chrome，没有时再下载浏览器；可以继续编辑工程。下载失败保留工程，查看运行记录后重试。使用前确认 [Remotion 官方许可证](https://www.remotion.dev/license)适合你的用途。
+4. 启动官方 Studio，检查画面。停止本次预览后再编辑或导出；不会自动打开或占用前台窗口。
+5. 导出 MP4、在工作台播放并下载。工程更新后保留旧成品并显示旧修订提醒；再次导出即可生成新成片。
+
+「备份可编辑工程」包含源代码、项目数据和素材。解压后按 README 使用 npm install、npm run preview / render；原模板代码 MIT，渲染器保留自己的许可证。
+
+工程、素材、运行目录和依赖缓存默认位于 DSH_HOME/data/dsh-remotion，两个插件分别保存。使用同一个 DSH_HOME 的 Web 与桌面 profile 共享这些已保存工程。不会改写原始素材或用户已有视频工程。关闭设置后，当前输入和任务状态保留在本次页面；刷新页面会提示未保存输入，已保存工程长期保留。任务可取消，关闭 DSH 会停止本插件任务。备份 ZIP 目前不支持在设置页导回。
+
+智能体工具：remotion_project（list/create/get/update）；remotion_render（prepare/preview/render/job/cancel）。渲染与更新需要工程 id 和当前 revision；查询/取消使用 job id。工具不会默认下载依赖。
+
+## 使用限制
+
+本轮为轻量模板编辑，尚不提供时间轴编辑、字幕转写、TTS 或云端渲染。外部链接不能作为素材路径；请先保存到本地再上传。默认 24 FPS，成品上限 200 MB。预览仅监听 127.0.0.1，属于本机服务；多用户机器仍需考虑同机访问。
+
 ## 技能内容
 
 - **remotion-best-practices**（总纲路由）+ 11 个领域技能（captions/create/docs/interactivity/maps/markup/multimedia/render/saas/studio/upgrade），同步自 Remotion 官方 v4.0.529

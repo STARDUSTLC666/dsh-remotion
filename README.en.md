@@ -8,6 +8,10 @@ Bring Remotion React video creation skills into DSH.
 
 ## What it does
 
+- A settings workbench for templates, editable content, media uploads, official Studio preview and local MP4 export.
+- Title card, product card and slideshow templates in landscape, portrait or square format.
+- Editable project backups, cancellable jobs and a warning when an MP4 uses an older revision.
+
 - Cover animation, audio, captions, charts and 3D scenes.
 - Guide project creation, Studio preview and rendering.
 - Preserve upstream skills and provide runtime health checks.
@@ -24,11 +28,13 @@ For the web version, replace `desktop` with `web`. Restart DSH after installatio
 
 ## Start using it
 
+Open Settings → Remotion → New video. Save your content, then upload media. Prepare the render environment on first use, inspect the official Studio preview, stop it and export MP4.
+
 Ask: “Make a Remotion video from these assets, preview it in Studio, then export MP4.”
 
 ## Requirements and configuration
 
-The plugin installs skills. Creation and rendering require Node / npx and Remotion project dependencies. See the guide for provenance, bundled versions and licensing.
+The plugin preserves upstream skills and adds a local workbench. First use needs Node.js 22.19+ / 24+ and npm; Remotion retains its [official license](https://www.remotion.dev/license). Dependencies are downloaded only when you explicitly prepare the environment.
 
 Detailed configuration, tool arguments and troubleshooting are in the [usage guide](docs/USAGE.en.md). For standalone development, follow the Node requirement in [package.json](package.json).
 

@@ -5,6 +5,10 @@
  */
 import { fileURLToPath } from 'node:url'
 import { createSkillBundle, type SkillsPluginContext } from './skill-bundle.js'
+import { installMediaWorkbench } from './media-workbench.js'
+export { MediaWorkbench } from './media-workbench.js'
+export { MediaStore } from './media-store.js'
+export { MEDIA_TEMPLATES, MEDIA_VERSIONS } from './media-templates.js'
 
 export { parseSkillFile } from './skill-bundle.js'
 export type { SkillRegistration, SkillsPluginContext } from './skill-bundle.js'
@@ -43,4 +47,4 @@ const bundle = createSkillBundle({
 export function checkBundledSkills() { return bundle.checkFiles() }
 
 /** Register this package's skills and its read-only health tool. */
-export function apply(ctx: SkillsPluginContext): void { bundle.apply(ctx) }
+export function apply(ctx: SkillsPluginContext): void { bundle.apply(ctx); installMediaWorkbench(ctx, 'remotion') }

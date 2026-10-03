@@ -1,7 +1,7 @@
 {
   "name": "dsh-remotion",
-  "version": "0.3.4",
-  "description": "把 Remotion 的 React 视频创作技能接入 DSH。",
+  "version": "0.4.0",
+  "description": "DSH 视频插件：Remotion 技能、模板与素材工作台、官方 Studio 预览和本地 MP4 导出。",
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -11,7 +11,8 @@
       "default": "./lib/index.js"
     },
     "./cordis.patch.yml": "./cordis.patch.yml",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./client": "./lib/client.js"
   },
   "files": [
     "lib",
@@ -21,10 +22,11 @@
     "README.en.md",
     "scripts",
     "docs",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "templates/DESIGN.md"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node scripts/build-client.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "pnpm run build && node --test \"test/*.test.mjs\"",
     "prepublishOnly": "pnpm run build"
@@ -32,6 +34,12 @@
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-settings"
+      ],
+      "platform": "web"
     }
   },
   "keywords": [
@@ -47,10 +55,13 @@
     "node": "^22.19.0 || >=24.0.0"
   },
   "dependencies": {
+    "fflate": "0.8.3",
+    "proper-lockfile": "4.1.2",
     "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
+    "@types/proper-lockfile": "4.1.4",
     "typescript": "^5.6.0"
   },
   "repository": {
