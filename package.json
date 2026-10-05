@@ -1,6 +1,6 @@
 {
   "name": "dsh-remotion",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "DSH 视频插件：Remotion 技能、模板与素材工作台、官方 Studio 预览和本地 MP4 导出。",
   "type": "module",
   "main": "lib/index.js",

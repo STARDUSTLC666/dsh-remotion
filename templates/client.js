@@ -7,6 +7,8 @@ window.__ModuleLoader__.load({ id: 'dsh-__ENGINE__', factory: require => {
     const message = typeof error === 'string' ? error : error?.message || String(error || '');
     if (!en || !/[\u3400-\u9fff]/.test(message)) return message;
     if (error?.status === 401) return 'Your session expired. Reopen DSH and try again.';
+    if (/先归档|已达 30/.test(message)) return 'The 30 active project slots are full. Archive another project before creating or restoring one.';
+    if (/已有预览或渲染/.test(message)) return 'Stop the active preview or cancel the render before archiving or restoring a project.';
     if (error?.status === 409 || /已.*更新|另一窗口|修订/.test(message)) return 'The project changed. Reopen the latest version and compare it with your preserved input.';
     if (/标题/.test(message)) return 'Enter a title up to 72 characters.';
     if (/时长/.test(message)) return 'Set a duration between 3 and 30 seconds.';
@@ -28,7 +30,7 @@ window.__ModuleLoader__.load({ id: 'dsh-__ENGINE__', factory: require => {
   }
   function urlFor(project, kind, extra = {}) { const url = new URL(route, document.baseURI); url.search = new URLSearchParams({ id: project.id, kind, ...extra }); return url.href; }
   function Workbench({ locale }) {
-    const [lang, setLang] = useState('zh'), [projects, setProjects] = useState([]), [environment, setEnvironment] = useState(null), [templates, setTemplates] = useState([]);
+    const [lang, setLang] = useState('zh'), [projects, setProjects] = useState([]), [archived, setArchived] = useState([]), [archiveReview, setArchiveReview] = useState(false), [environment, setEnvironment] = useState(null), [templates, setTemplates] = useState([]);
     const [project, setProject] = useState(cache.project), [fields, setFields] = useState(cache.fields || empty()), [dirty, setDirty] = useState(cache.dirty), [creating, setCreating] = useState(cache.creating);
     const [job, setJob] = useState(cache.job), [busy, setBusy] = useState(false), [error, setError] = useState(''), [notice, setNotice] = useState(''), [pending, setPending] = useState(null), [conflict, setConflict] = useState(false);
     const busyRef = useRef(false), fileRef = useRef(null), latest = useRef({ project, fields, dirty }); latest.current = { project, fields, dirty };
@@ -38,7 +40,7 @@ window.__ModuleLoader__.load({ id: 'dsh-__ENGINE__', factory: require => {
     useEffect(() => { cache = { project, fields, dirty, job, creating }; }, [project, fields, dirty, job, creating]);
     useEffect(() => { const exit = e => { if (latest.current.dirty) { e.preventDefault(); e.returnValue = ''; } }; window.addEventListener('beforeunload', exit); return () => window.removeEventListener('beforeunload', exit); }, []);
     async function refresh() {
-      const data = await api({ action: 'list' }); setProjects(data.projects); setEnvironment(data.environment); setTemplates(data.templates);
+      const data = await api({ action: 'list' }); setProjects(data.projects); setArchived(data.archivedProjects || []); setEnvironment(data.environment); setTemplates(data.templates);
       const current = latest.current, saved = !current.dirty && data.projects.find(row => row.id === current.project?.id);
       if (saved) { setProject(saved); setFields(fieldsOf(saved)); }
       setJob(previous => data.jobs.find(row => row.id === previous?.id) || data.jobs.filter(row => row.state === 'running').at(-1) || data.jobs.at(-1) || null);
@@ -59,7 +61,7 @@ window.__ModuleLoader__.load({ id: 'dsh-__ENGINE__', factory: require => {
       return () => { live = false; clearInterval(timer); };
     }, [job?.id, job?.state]);
     async function perform(fn) { if (busyRef.current) return; busyRef.current = true; setBusy(true); setError(''); setNotice(''); try { return await fn(); } catch (e) { setError(e); setConflict(e.status === 409); } finally { busyRef.current = false; setBusy(false); } }
-    async function open(id) { const next = await api({ action: 'get', id }); setProject(next); setFields(fieldsOf(next)); setCreating(false); setDirty(false); setConflict(false); setPending(null); }
+    async function open(id) { const next = await api({ action: 'get', id }); setProject(next); setFields(fieldsOf(next)); setCreating(false); setDirty(false); setConflict(false); setPending(null); setArchiveReview(false); }
     function navigate(target) { if (dirty) { setPending(target); return; } perform(() => move(target)); }
     async function move(target) { if (target === 'new') { setProject(null); setFields(empty()); setCreating(true); } else if (target === 'list') { setProject(null); setCreating(false); await refresh(); } else await open(target); setDirty(false); setPending(null); }
     async function save() { const next = await api(project ? { action: 'update', id: project.id, revision: project.revision, fields } : { action: 'create', fields }); setProject(next); setFields(fieldsOf(next)); setCreating(false); setDirty(false); setConflict(false); setNotice(t('工程已保存。', 'Project saved.')); await refresh(); return next; }
@@ -69,12 +71,16 @@ window.__ModuleLoader__.load({ id: 'dsh-__ENGINE__', factory: require => {
       const response = await fetch(new URL(route + '/upload', document.baseURI), { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/octet-stream', 'x-dsh-media': '1', 'x-project-id': project.id, 'x-project-revision': String(project.revision), 'x-file-name': encodeURIComponent(file.name) }, body: file }); const result = await response.json(); if (!response.ok || !result.ok) { const e = new Error(result.message); e.status = response.status; throw e; } setProject(result.value); setNotice(t('素材副本已保存，原文件未改变。', 'A media copy was saved; your original is unchanged.'));
     }); event.target.value = ''; }
     async function start(action) { await perform(async () => { if (action !== 'prepare' && dirty) throw new Error(t('请先保存修改。', 'Save changes first.')); setJob(await api({ action, id: project?.id, revision: project?.revision })); }); }
+    async function archiveProject() { await api({action:'archive',id:project.id,revision:project.revision,confirmed:true}); setArchiveReview(false); setProject(null); setCreating(false); setDirty(false); await refresh(); setNotice(t('工程已归档，素材和成品均保留，可在下方恢复。','Project archived. Media and output are preserved; restore it below.')); }
     const render = project?.renders?.[0], stale = render && render.revision !== project.revision;
     if (!environment) return h('div', { className: 'dmw' }, h('style', null, css), h('h2', null, title + t(' 视频工作台', ' video workbench')),
       error ? h(React.Fragment, null, h('p', { className: 'notice error', role: 'alert' }, mediaError(error, lang === 'en')), h('button', { disabled: busy, onClick: () => perform(refresh) }, t('重新读取项目', 'Reload projects'))) : h('p', { role: 'status' }, t('正在读取工程与渲染环境…', 'Loading projects and render environment…')));
     return h('div', { className: 'dmw' }, h('style', null, css), h('h2', null, title + t(' 视频工作台', ' video workbench')),
       h('p', { className: 'muted' }, t('模板 → 素材 → 官方预览 → 本机 MP4。工程与素材保存在 DSH 本地数据目录。', 'Template → media → official preview → local MP4. Projects stay in the local DSH data folder.')),
       error && h('div', { className: 'notice error', role: 'alert' }, mediaError(error, lang === 'en')), notice && h('div', { className: 'notice', role: 'status' }, notice),
+      archived.length > 0 && h('details', { className: 'card' }, h('summary', null, t('已归档工程', 'Archived projects') + ' (' + archived.length + ')'), h('p', {className:'muted'}, t('归档保留素材与成品，不占当前 30 个工程名额。恢复后可以继续编辑。','Archives retain media and output, freeing an active project slot. Restore to edit again.')), archived.map(p => h('div',{className:'bar',key:p.id}, h('strong',null,p.title), h('button',{disabled:busy||dirty||activeJob,onClick:()=>perform(async()=>{await api({action:'restore',id:p.id,revision:p.revision,confirmed:true});await refresh();await open(p.id);setNotice(t('工程已恢复。','Project restored.'))})},t('恢复工程','Restore project'))))),
+      project && !creating && h('div',{className:'bar'},h('button',{disabled:busy||dirty||activeJob,onClick:()=>setArchiveReview(true)},t('归档此工程','Archive this project'))),
+      project && archiveReview && h('div',{className:'card',role:'alert'},h('p',null,t('归档后将从当前项目列表移走；工程、上传素材和已导出 MP4 全部保留，可随时恢复。未保存修改需先处理。','Archiving removes this project from the active list. The project, uploaded media and exported MP4s are preserved and can be restored. Save or discard pending edits first.')),h('div',{className:'bar'},h('button',{disabled:busy||dirty||activeJob,onClick:()=>perform(archiveProject)},t('确认归档','Confirm archive')),h('button',{disabled:busy,onClick:()=>setArchiveReview(false)},t('取消归档','Cancel archive')))),
       pending && h('div', { className: 'card' }, h('p', null, t('有未保存内容，如何继续？', 'You have unsaved changes.')),
         h('div', { className: 'bar' }, h('button', { disabled: running, onClick: () => perform(async () => { await save(); await move(pending); }) }, t('保存后继续', 'Save and continue')), h('button', { disabled: running, onClick: () => perform(() => move(pending)) }, t('放弃修改并继续', 'Discard and continue')), h('button', { onClick: () => setPending(null) }, t('留在当前', 'Stay here')))),
       conflict && project && h('button', { disabled: running, onClick: () => { setPending(project.id); } }, t('重新打开最新版本（先处理当前输入）', 'Reopen latest version (review your current input first)')),

@@ -2,6 +2,10 @@
 
 [Overview](../README.en.md) · [Changelog](../CHANGELOG.md) · [Validation](VALIDATION.md)
 
+## Current improvements
+
+Save before confirming an archive; restore it from Archived projects. Archives preserve data and disk usage. Up to 30 projects can be active; stop active jobs first.
+
 ## Installation
 
 ```bash

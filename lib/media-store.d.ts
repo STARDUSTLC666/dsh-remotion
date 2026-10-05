@@ -7,10 +7,12 @@ export declare class MediaStore {
     readonly root: string;
     constructor(engine: MediaEngine, root?: string);
     init(): Promise<void>;
-    path(id: string): Promise<string>;
+    path(id: string, archived?: boolean): Promise<string>;
     checkPath(path: string): Promise<void>;
-    get(id: string): Promise<MediaProject>;
-    list(): Promise<MediaProject[]>;
+    get(id: string, archived?: boolean): Promise<MediaProject>;
+    list(archived?: boolean): Promise<MediaProject[]>;
+    /** Move a complete managed project without deleting sources, assets or renders. */
+    archive(id: string, revision: unknown, restore?: boolean): Promise<MediaProject>;
     private write;
     create(value: unknown): Promise<MediaProject>;
     edit(id: string, revision: unknown, fn: (p: MediaProject) => Promise<void> | void, bump?: boolean): Promise<MediaProject>;

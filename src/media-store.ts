@@ -14,9 +14,9 @@ export class MediaStore {
   readonly root: string
   constructor(engine: MediaEngine, root?: string) { this.root = resolve(root ?? join(process.env.DSH_HOME || join(homedir(), '.dsh'), 'data', 'dsh-' + engine)) }
   async init(): Promise<void> { await mkdir(join(this.root, 'projects'), { recursive: true, mode: 0o700 }) }
-  async path(id: string): Promise<string> {
+  async path(id: string, archived = false): Promise<string> {
     await this.init()
-    const dir = join(this.root, 'projects', mediaId(id))
+    const dir = join(this.root, archived ? 'archives' : 'projects', mediaId(id))
     if ((await lstat(dir)).isSymbolicLink()) throw new Error('项目目录不能是符号链接。')
     await this.checkPath(dir)
     return dir
@@ -25,8 +25,8 @@ export class MediaStore {
     const base = await realpath(this.root), actual = await realpath(path), rel = relative(base, actual)
     if (rel === '..' || rel.startsWith('..' + (process.platform === 'win32' ? '\\' : '/')) || isAbsolute(rel)) throw new Error('文件不在本插件项目目录内。')
   }
-  async get(id: string): Promise<MediaProject> {
-    const file = join(await this.path(id), 'project.json'); await this.checkPath(file)
+  async get(id: string, archived = false): Promise<MediaProject> {
+    const file = join(await this.path(id, archived), 'project.json'); await this.checkPath(file)
     if ((await stat(file)).size > 65536) throw new Error('工程记录过大，请保留文件后检查。')
     const p = JSON.parse(await readFile(file, 'utf8')) as MediaProject
     validateFields(p)
@@ -35,10 +35,31 @@ export class MediaStore {
     for (const r of p.renders) mediaId(r.id)
     return p
   }
-  async list(): Promise<MediaProject[]> {
+  async list(archived = false): Promise<MediaProject[]> {
     await this.init(); const result = []
-    for (const id of await readdir(join(this.root, 'projects'))) { if (/^[0-9a-f-]{36}$/.test(id)) result.push(await this.get(id)) }
+    const folder = join(this.root, archived ? 'archives' : 'projects')
+    const ids = await readdir(folder).catch(error => { if (archived && error.code === 'ENOENT') return []; throw error })
+    for (const id of ids) { if (/^[0-9a-f-]{36}$/.test(id)) result.push(await this.get(id, archived)) }
     return result.sort((a, b) => b.updated.localeCompare(a.updated))
+  }
+  /** Move a complete managed project without deleting sources, assets or renders. */
+  async archive(id: string, revision: unknown, restore = false): Promise<MediaProject> {
+    await this.init()
+    const unlock = await lockfile.lock(join(this.root, 'projects'), { retries: { retries: 8, minTimeout: 30, maxTimeout: 60 } })
+    let release: (() => Promise<void>) | undefined
+    try {
+      const source = await this.path(id, restore)
+      release = await lockfile.lock(source, { retries: { retries: 8, minTimeout: 30, maxTimeout: 60 } })
+      const p = await this.get(id, restore)
+      if (revision !== p.revision) throw new MediaConflict('工程已更新，请重新读取后再归档或恢复。')
+      if (restore && (await this.list()).length >= 30) throw new MediaConflict('当前项目已达 30 个，请先归档其他项目再恢复。')
+      const folder = join(this.root, restore ? 'projects' : 'archives')
+      await mkdir(folder, { recursive: true }); await this.checkPath(folder)
+      const target = join(folder, mediaId(id))
+      if (await lstat(target).then(() => true, error => { if (error.code === 'ENOENT') return false; throw error })) throw new Error('目标已有同编号工程，已保留两份文件，请先备份检查。')
+      await rename(source, target)
+      return p
+    } finally { if (release) await release(); await unlock() }
   }
   private async write(p: MediaProject): Promise<void> {
     const dir = await this.path(p.id), temp = join(dir, randomUUID() + '.tmp')
@@ -49,7 +70,7 @@ export class MediaStore {
     await this.init()
     const unlock = await lockfile.lock(join(this.root, 'projects'), { retries: { retries: 8, minTimeout: 30, maxTimeout: 60 } })
     try {
-      if ((await this.list()).length >= 30) throw new Error('工作台最多保存 30 个项目，请先备份现有工程。')
+      if ((await this.list()).length >= 30) throw new Error('工作台最多保存 30 个当前项目，请先归档现有工程。')
       const p: MediaProject = { ...validateFields(value), id: randomUUID(), revision: 1, updated: new Date().toISOString(), assets: [], renders: [] }
       await mkdir(join(this.root, 'projects', p.id), { mode: 0o700 }); await this.write(p); return p
     } finally { await unlock() }
