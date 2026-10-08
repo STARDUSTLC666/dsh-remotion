@@ -8,6 +8,8 @@ Bring Remotion React video creation skills into DSH.
 
 [![npm](https://img.shields.io/npm/v/dsh-remotion)](https://www.npmjs.com/package/dsh-remotion) [![downloads](https://raw.githubusercontent.com/STARDUSTLC666/dsh-suite/npm-downloads/assets/dsh-remotion-downloads.svg)](https://www.npmjs.com/package/dsh-remotion)
 
+Feedback and contributions are welcome: report [issues](https://github.com/STARDUSTLC666/dsh-remotion/issues) or submit [pull requests](https://github.com/STARDUSTLC666/dsh-remotion/pulls).
+
 ## What it does
 
 - A settings workbench for templates, editable content, media uploads, official Studio preview and local MP4 export.
