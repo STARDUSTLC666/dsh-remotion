@@ -10,6 +10,8 @@ Bring Remotion React video creation skills into DSH.
 
 Feedback and contributions are welcome: report [issues](https://github.com/STARDUSTLC666/dsh-remotion/issues) or submit [pull requests](https://github.com/STARDUSTLC666/dsh-remotion/pulls).
 
+Open the new native sidebar workbench after updating and restarting DSH. Settings remains available. See the [workbench guide and validation boundaries](docs/WORKBENCH.md).
+
 ## What it does
 
 - A settings workbench for templates, editable content, media uploads, official Studio preview and local MP4 export.
