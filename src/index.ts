@@ -1,3 +1,4 @@
+import { registerUpdates } from '@stardustlc/dsh-updates'
 /**
  * dsh-remotion: packaged video skills with disk and registry health checks.
  * The portable implementation lives in skill-bundle.ts; this entry only
@@ -47,4 +48,6 @@ const bundle = createSkillBundle({
 export function checkBundledSkills() { return bundle.checkFiles() }
 
 /** Register this package's skills and its read-only health tool. */
-export function apply(ctx: SkillsPluginContext): void { bundle.apply(ctx); installMediaWorkbench(ctx, 'remotion') }
+export function apply(ctx: SkillsPluginContext): void {
+  registerUpdates(ctx, { name: "dsh-remotion" })
+ bundle.apply(ctx); installMediaWorkbench(ctx, 'remotion') }

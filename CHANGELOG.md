@@ -2,6 +2,12 @@
 
 [返回简介](README.md) · [使用说明](docs/USAGE.md) · [验证记录](docs/VALIDATION.md)
 
+## 0.8.0 (2026-10-26)
+
+- Add this plugin’s own update controls and independent preferences. Automatic installation stays off until explicitly enabled.
+- Confirm manual installs, preserve local sources and disabled state, pause for tasks or unsaved changes, and use native DSH recovery without forced restarts.
+- Require the public DSH 0.2.1-rc.3 update APIs; Suite components remain managed through Suite.
+
 ## 0.7.0（2026-10-25）
 
 - 视频主工作台，内容、真实预览、素材和导出记录重新编排；明确区分已保存修订与尚未导出的修改。

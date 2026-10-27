@@ -59,6 +59,9 @@ const [editorTab,setEditorTab]=useState('content'),[libraryTab,setLibraryTab]=us
             const busyRef = useRef(false), fileRef = useRef(null), latest = useRef({ project, fields, dirty });
             latest.current = { project, fields, dirty };
             const t = (zh, en) => lang === 'en' ? en : zh, activeJob = job?.state === 'running', running = busy || activeJob && job.kind !== 'prepare';
+// Update protection: dsh-__ENGINE__
+__stardustUpdatesGuard(React, "dsh-__ENGINE__", { dirty, busy: busy || activeJob, retainOnClose: true });
+
             const stage = lang === 'en' ? ({ '下载环境': 'Preparing environment', '检查 FFmpeg': 'Checking FFmpeg', '下载官方依赖': 'Downloading official dependencies', '检查官方环境': 'Checking official CLI', '检查或下载 Chrome': 'Checking or downloading Chrome', '下载专用渲染浏览器': 'Downloading the official rendering browser', '准备修订快照': 'Preparing saved revision', '启动官方预览': 'Starting official preview', '官方预览已就绪': 'Official preview is ready', '检查合成': 'Checking composition', '渲染 MP4': 'Rendering MP4', '已完成': 'Completed', '已取消': 'Cancelled', '已取消；工程已保留': 'Cancelled; project preserved', '官方任务未完成，请展开运行记录后重试。工程已保留。': 'The official task failed. Open the job log and retry; your project is preserved.', '未找到 FFmpeg，请安装并加入 PATH，重启 DSH 后重试。工程已保留。': 'FFmpeg was not found. Install it, add it to PATH, then restart DSH and retry; your project is preserved.' }[job?.stage] || mediaError(job?.stage, true)) : job?.stage;
             useEffect(() => { const update = () => setLang(String(locale?.getSnapshot?.().active || '').startsWith('en') ? 'en' : 'zh'); update(); return locale?.subscribe?.(update); }, [locale]);
             useEffect(() => { cache = { project, fields, dirty, job, creating }; }, [project, fields, dirty, job, creating]);

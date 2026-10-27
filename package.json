@@ -1,6 +1,6 @@
 {
   "name": "dsh-remotion",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "DSH 视频插件：Remotion 技能、模板与素材工作台、官方 Studio 预览和本地 MP4 导出。",
   "type": "module",
   "main": "lib/index.js",
@@ -26,7 +26,7 @@
     "templates/DESIGN.md"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json && node scripts/build-client.mjs",
+    "build": "tsc -p tsconfig.json && node scripts/build-client.mjs && node scripts/build-updates.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "pnpm run build && node --test \"test/*.test.mjs\"",
     "prepublishOnly": "pnpm run build"
@@ -36,12 +36,12 @@
       "patch": "./cordis.patch.yml"
     },
     "client": {
+      "platform": "web",
       "inject": [
         "@deepseek-ai/dsh-client-ui-settings",
         "@deepseek-ai/dsh-client-ui-layout",
         "@deepseek-ai/dsh-client-ui-sidebar"
-      ],
-      "platform": "web"
+      ]
     }
   },
   "keywords": [
@@ -54,12 +54,14 @@
   ],
   "license": "MIT",
   "engines": {
-    "node": "^22.19.0 || >=24.0.0"
+    "node": "^22.19.0 || >=24.0.0",
+    "dsh": ">=0.2.1-rc.3"
   },
   "dependencies": {
     "fflate": "0.8.3",
     "proper-lockfile": "4.1.2",
-    "yaml": "^2.9.0"
+    "yaml": "^2.9.0",
+    "@stardustlc/dsh-updates": "0.1.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
