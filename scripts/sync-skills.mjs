@@ -6,7 +6,8 @@
  * The upstream skill bodies are the product content; only the frontmatter is
  * ours: an Agent Skills `name`/`description` plus the upstream `version`, with
  * every other upstream key (e.g. allowed-tools) dropped so DSH registration
- * stays on the documented keys.
+ * stays on the documented keys. A short DSH package context keeps standalone
+ * skill-upgrade commands from changing a different installation.
  *
  * Usage:
  *   node scripts/sync-skills.mjs --upstream <path-to-remotion-dev/skills> [--check]
@@ -33,7 +34,7 @@ const portFrontmatter = (text, fallback) => {
   const name = /^name:\s*(.+)$/m.exec(match[1])?.[1]?.trim() ?? fallback.name
   const description = /^description:\s*(.+)$/m.exec(match[1])?.[1]?.trim() ?? fallback.description
   if (!version) throw new Error('Missing upstream version for ' + name)
-  return ['---', 'name: ' + name, 'description: ' + description, 'version: ' + version, '---', '', text.slice(match[0].length).replace(/^\n+/, '')].join('\n')
+  return ['---', 'name: ' + name, 'description: ' + description, 'version: ' + version, '---', '', '## DSH package context', '', 'This skill is bundled with dsh-remotion. DSH plugin management owns updates to these skill files; do not run standalone `skills add`, `skills update`, or `remotion skills` commands to replace this bundle. Project dependencies and lockfiles are separate: preserve existing projects, and only upgrade their Remotion dependencies when the user requests it, then verify the project. Run commands in the user project, never in this installed plugin directory. The official instructions below apply within these package boundaries.', '', text.slice(match[0].length).replace(/^\n+/, '')].join('\n')
 }
 
 if (!values.check) rmSync(targetSkills, { recursive: true, force: true })

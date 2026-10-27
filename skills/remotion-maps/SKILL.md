@@ -1,8 +1,12 @@
 ---
 name: remotion-maps
 description: Remotion Map animation knowledge
-version: 4.0.529
+version: 4.0.539
 ---
+
+## DSH package context
+
+This skill is bundled with dsh-remotion. DSH plugin management owns updates to these skill files; do not run standalone `skills add`, `skills update`, or `remotion skills` commands to replace this bundle. Project dependencies and lockfiles are separate: preserve existing projects, and only upgrade their Remotion dependencies when the user requests it, then verify the project. Run commands in the user project, never in this installed plugin directory. The official instructions below apply within these package boundaries.
 
 
 # Remotion Maps

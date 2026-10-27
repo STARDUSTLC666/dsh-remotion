@@ -28,7 +28,7 @@ Open Settings → Remotion in DSH Web or Desktop.
 
 1. Create a video. Select title card, product card or slideshow; set title/body, canvas and 3–30 seconds, then save.
 2. Upload local PNG/JPEG copies, one MP3/WAV background audio and one muted MP4 background video. Limits: 20 MB each, 40 MB total. Slideshow follows upload order and needs at least two seconds per image.
-3. Explicitly prepare the environment. It downloads official CLI 4.0.532; installed Chrome is reused, with a browser download only when needed. You can continue editing during preparation. Check the [official Remotion license](https://www.remotion.dev/license) for your use case.
+3. Explicitly prepare the environment. It downloads official CLI 4.0.539; installed Chrome is reused, with a browser download only when needed. You can continue editing during preparation. Check the [official Remotion license](https://www.remotion.dev/license) for your use case.
 4. Start official Studio and inspect the picture. Stop this preview before editing or exporting; no window opens automatically.
 5. Export, play and download MP4. Editing preserves earlier MP4s with a revision warning; export again for a new output.
 
@@ -40,7 +40,7 @@ This is template editing, without a full timeline, transcription, TTS or cloud r
 
 ## Contents
 
-- **remotion-best-practices** (router hub) + 11 domain skills (captions/create/docs/interactivity/maps/markup/multimedia/render/saas/studio/upgrade), synced from official Remotion v4.0.529
+- **remotion-best-practices** (router hub) + 11 domain skills (captions/create/docs/interactivity/maps/markup/multimedia/render/saas/studio/upgrade), synced from official Remotion v4.0.539
 
 ## Requirements
 
@@ -48,7 +48,7 @@ Node.js `^22.19.0 || >=24.0.0` + npx (npm registry); rendering needs ffmpeg (gui
 
 ## Porting notes
 
-Synced from the official `remotion-dev/skills` checkout at v4.0.529 (2026-09-25): upstream skill bodies are vendored as-is, including the embedded reference copies under `remotion-best-practices/` and `remotion-markup/`, with `scripts/sync-skills.mjs` making the port repeatable and checkable. Only the frontmatter is ours (`name`/`description` plus the upstream `version`).
+Synced from official `remotion-dev/skills` v4.0.539 commit `30d4553ecd46fbc5212fd0ff006ae43af522158b` (2026-10-27). All twelve skills and embedded references are updated. Frontmatter and a short DSH package context are adapted so DSH owns bundled skill updates and existing project dependencies remain separate. `scripts/sync-skills.mjs --check` validates the port; resource hashes are recorded in `skills/UPSTREAM.json`.
 
 ## Multi-harness
 

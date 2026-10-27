@@ -6,7 +6,7 @@ export interface MediaProject extends MediaFields {
   id: string; revision: number; updated: string; assets: MediaAsset[]
   renders: Array<{ id: string; revision: number; bytes: number; created: string }>
 }
-export const MEDIA_VERSIONS = { hyperframes: '0.8.114', remotion: '4.0.532', gsap: '3.14.2' } as const
+export const MEDIA_VERSIONS = { hyperframes: '0.8.207', remotion: '4.0.539', gsap: '3.15.0' } as const
 export const MEDIA_TEMPLATES = [
   { id: 'title', zh: '标题卡', en: 'Title card', description: '一句标题、一段介绍，适合开场与通知。' },
   { id: 'product', zh: '产品介绍', en: 'Product card', description: '深色画布与一张主图，适合产品亮点。' },
