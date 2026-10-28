@@ -14,6 +14,8 @@ Open the new native sidebar workbench after updating and restarting DSH. Setting
 
 Bundled skills: official Remotion 4.0.539, twelve skills and their reference resources.
 
+Move images up or down in the Media tab, including with the keyboard. The order saves immediately; export again to apply it to a new MP4.
+
 ## What it does
 
 - A settings workbench for templates, editable content, media uploads, official Studio preview and local MP4 export.

@@ -247,6 +247,7 @@ export class MediaWorkbench {
           case 'get': value = await this.store.get(mediaId(v.id)); break
           case 'update': value = await this.store.update(mediaId(v.id), v.revision, v.fields); break
           case 'removeAsset': value = await this.store.removeAsset(mediaId(v.id), v.revision, mediaId(v.asset)); break
+          case 'reorderImages': value = await this.store.reorderImages(mediaId(v.id), v.revision, v.imageIds); break
           case 'archive': case 'restore': {
             if (v.confirmed !== true) throw new Error('请明确确认归档或恢复。')
             // The same slot covers jobs from another DSH process, so a project

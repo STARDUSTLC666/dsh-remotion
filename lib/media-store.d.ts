@@ -17,6 +17,8 @@ export declare class MediaStore {
     create(value: unknown): Promise<MediaProject>;
     edit(id: string, revision: unknown, fn: (p: MediaProject) => Promise<void> | void, bump?: boolean): Promise<MediaProject>;
     update(id: string, revision: unknown, value: unknown): Promise<MediaProject>;
+    /** Reorder existing images atomically; audio/video slots and uploaded bytes stay intact. */
+    reorderImages(id: string, revision: unknown, order: unknown): Promise<MediaProject>;
     assetBytes(id: string, asset: MediaAsset): Promise<Buffer>;
     upload(id: string, revision: unknown, name: string, bytes: Buffer): Promise<MediaProject>;
     removeAsset(id: string, revision: unknown, assetId: string): Promise<MediaProject>;

@@ -85,6 +85,18 @@ export class MediaStore {
     } finally { await unlock() }
   }
   async update(id: string, revision: unknown, value: unknown): Promise<MediaProject> { return this.edit(id, revision, p => { Object.assign(p, validateFields(value)) }) }
+  /** Reorder existing images atomically; audio/video slots and uploaded bytes stay intact. */
+  async reorderImages(id: string, revision: unknown, order: unknown): Promise<MediaProject> {
+    if (!Number.isInteger(revision) || Number(revision) < 1) throw new Error('调整图片顺序需要当前工程修订号。')
+    return this.edit(id, revision, p => {
+      const images = p.assets.filter(a => a.kind === 'image'), byId = new Map(images.map(a => [a.id, a]))
+      if (!Array.isArray(order) || order.length !== images.length || new Set(order).size !== images.length || order.some(id => typeof id !== 'string' || !byId.has(id))) throw new Error('图片顺序必须包含当前项目的全部图片，且每张只出现一次。')
+      if (images.every((asset, index) => asset.id === order[index])) return
+      let index = 0
+      p.assets = p.assets.map(asset => asset.kind === 'image' ? byId.get(order[index++])! : asset)
+      p.revision++
+    }, false)
+  }
   async assetBytes(id: string, asset: MediaAsset): Promise<Buffer> {
     const file = join(await this.path(id), 'assets', asset.file); await this.checkPath(file)
     if ((await stat(file)).size !== asset.bytes || asset.bytes > 20 * 1024 * 1024) throw new Error('素材已改变，请重新上传并检查。')

@@ -102,6 +102,31 @@ test('snapshots preserve exact assets while later edits leave prior output visib
   assert.deepEqual(snapshot.assets.get(uploaded.assets[0].file), png)
   await assert.rejects(store.snapshot(p.id, uploaded.revision), e => e.status === 409)
 })
+test('image order persists atomically, preserving mixed media, uploaded bytes and previous snapshots', async t => {
+  const { store, root } = await fixture(t); let p = await store.create({ ...fields, template: 'slideshow', duration: 6 })
+  const wav = Buffer.alloc(44); wav.write('RIFF'); wav.write('WAVE', 8)
+  for (const [name, bytes] of [['a.png',png],['music.wav',wav],['b.png',png],['c.png',png]]) p = await store.upload(p.id,p.revision,name,bytes)
+  p = await store.edit(p.id,p.revision,current=>{current.renders.push({id:current.id,revision:current.revision,bytes:9,created:new Date().toISOString()})},false)
+  const before = await store.snapshot(p.id,p.revision), ids = p.assets.filter(a=>a.kind==='image').map(a=>a.id), music = p.assets[1]
+  const result = await store.reorderImages(p.id,p.revision,[...ids].reverse())
+  assert.equal(result.revision,p.revision+1);assert.deepEqual(result.assets.map(a=>a.id),[ids[2],music.id,ids[1],ids[0]])
+  for(const asset of result.assets)assert.deepEqual(await store.assetBytes(p.id,asset),before.assets.get(asset.file))
+  assert.deepEqual(before.project.assets,p.assets);assert.deepEqual(result.renders,p.renders)
+  assert.deepEqual((await new MediaStore('remotion',root).get(p.id)).assets,result.assets)
+  const same = await store.reorderImages(p.id,result.revision,[...ids].reverse());assert.equal(same.revision,result.revision)
+  const sources = projectSources(result,'hyperframes');assert.ok(sources['compositions/scene-0.html'].includes(result.assets[0].file))
+})
+test('invalid image orders cannot lose media or overwrite a competing revision', async t => {
+  const { store, workbench } = await fixture(t);let p = await store.create(fields)
+  for(const name of ['a.png','b.png'])p=await store.upload(p.id,p.revision,name,png)
+  const ids=p.assets.map(a=>a.id),file=join(await store.path(p.id),'project.json'),before=await readFile(file)
+  for(const imageIds of [null,{},[],[ids[0]],[ids[0],ids[0]],['../../foreign',ids[1]],[1,ids[1]]]){
+    const response=await request(workbench,{action:'reorderImages',id:p.id,revision:p.revision,imageIds});assert.equal(response.status,400);assert.deepEqual(await readFile(file),before)
+  }
+  assert.equal((await request(workbench,{action:'reorderImages',id:p.id,imageIds:ids})).status,400)
+  const response=await request(workbench,{action:'reorderImages',id:p.id,revision:p.revision,imageIds:[...ids].reverse()});assert.equal(response.status,200)
+  const latest=await readFile(file),stale=await request(workbench,{action:'reorderImages',id:p.id,revision:p.revision,imageIds:ids});assert.equal(stale.status,409);assert.deepEqual(await readFile(file),latest)
+})
 test('templates escape user text, stay offline and reject an unreadably fast slideshow', async t => {
   const { store } = await fixture(t), p = await store.create({ ...fields, title: '<script>alert(1)</script>' })
   const source = projectSources(p, 'hyperframes'), html = source['compositions/scene-0.html']; assert.ok(html.includes('&lt;script&gt;')); assert.ok(!html.includes('<script>alert(1)</script>')); assert.ok(!html.includes('https://'))

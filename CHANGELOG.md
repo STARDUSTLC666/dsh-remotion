@@ -1,7 +1,11 @@
-#- 同步官方 Remotion 4.0.539 的 12 个技能及引用资源，补充 DSH 包边界，避免独立技能更新命令改到其他安装。
- 更新记录
+# 更新记录
 
 [返回简介](README.md) · [使用说明](docs/USAGE.md) · [验证记录](docs/VALIDATION.md)
+
+## 0.9.0 (2026-10-28)
+
+- 素材页支持上移/下移图片，显示播放序号，立即保存并校验工程修订；不改音频/视频位置和旧成品。
+- Add keyboard-accessible image ordering without re-uploading. Existing renders remain available; export again to apply the new order.
 
 ## 0.8.3 (2026-10-27)
 

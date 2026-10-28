@@ -10,6 +10,10 @@ window.__ModuleLoader__.load({ id: 'dsh-__ENGINE__', factory: require => {
                 return message;
             if (error?.status === 401)
                 return 'Your session expired. Reopen DSH and try again.';
+            if (/调整图片顺序需要/.test(message))
+                return 'Reload the project before changing its image order.';
+            if (/图片顺序/.test(message))
+                return 'Use every current image exactly once. Reload the project before trying again.';
             if (/先归档|已达 30/.test(message))
                 return 'The 30 active project slots are full. Archive another project before creating or restoring one.';
             if (/已有预览或渲染/.test(message))

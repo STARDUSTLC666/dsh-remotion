@@ -27,7 +27,7 @@ export interface MediaProject extends MediaFields {
     }>;
 }
 export declare const MEDIA_VERSIONS: {
-    readonly hyperframes: "0.8.207";
+    readonly hyperframes: "0.8.209";
     readonly remotion: "4.0.539";
     readonly gsap: "3.15.0";
 };

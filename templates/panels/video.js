@@ -14,13 +14,24 @@ function MediaCanvas({ project, fields, render, dirty, stale, job, running, read
 function MediaAssets({ project, dirty, running, fileRef, upload, perform, setProject, t }) {
   const [remove, setRemove] = useState(null);
   if (!project) return h(W.Empty, { title: t('先保存工程，再添加素材', 'Save the project before adding media'), icon: 'video' }, t('填写标题并点击上方“保存工程”。', 'Enter a title and choose Save project above.'));
+  const imageIds = project.assets.filter(asset => asset.kind === 'image').map(asset => asset.id);
+  const move = (asset, offset) => perform(async () => {
+    const order = [...imageIds], index = order.indexOf(asset.id), next = index + offset;
+    if (index < 0 || next < 0 || next >= order.length) return;
+    [order[index], order[next]] = [order[next], order[index]];
+    setProject(await api({ action: 'reorderImages', id: project.id, revision: project.revision, imageIds: order }));
+  });
   return h('section', { className: 'media-assets-view' },
     h('div', { className: 'w-toolbar' }, h('h3', null, t('工程素材', 'Project media') + ' · ' + project.assets.length), h(W.Button, { icon: 'upload', disabled: running || dirty, onClick: () => fileRef.current?.click() }, t('上传素材', 'Upload media'))),
-    h('p', { className: 'w-muted' }, t('PNG/JPEG 图片、一个背景音频和一个静音背景视频；每个 ≤20 MB，总共 ≤40 MB。轮播按上传顺序，每张至少两秒。', 'PNG/JPEG images, one background audio and one muted background video; each ≤20 MB, total ≤40 MB. Slideshow follows upload order, at least two seconds per image.')),
+    h('p', { className: 'w-muted' }, t('PNG/JPEG 图片、一个背景音频和一个静音背景视频；每个 ≤20 MB，总共 ≤40 MB。轮播按下方图片顺序，每张至少两秒。', 'PNG/JPEG images, one background audio and one muted background video; each ≤20 MB, total ≤40 MB. Slideshow follows the image order below, at least two seconds per image.')),
+    imageIds.length > 1 ? h('p', { className: 'w-muted' }, t('上移或下移图片后立即保存。已导出的 MP4 保持原样，请重新导出以应用新顺序。', 'Moving an image saves its order immediately. Existing MP4s are preserved; export again to apply the new order.')) : null,
     dirty ? h(W.Status, null, t('请先保存修改，再上传或移除素材副本。', 'Save changes before uploading or removing media copies.')) : null,
     h('input', { ref: fileRef, type: 'file', accept: '.png,.jpg,.jpeg,.mp3,.wav,.mp4', disabled: running || dirty, onChange: upload, 'aria-label': t('上传素材副本', 'Upload a media copy'), style: { display: 'none' } }),
     project.assets.length ? h('ul', { className: 'media-asset-list' }, project.assets.map(asset => h('li', { key: asset.id }, asset.kind === 'image' ? h('img', { src: urlFor(project, 'asset', { asset: asset.id }), alt: asset.name }) : h(W.Icon, { name: asset.kind === 'video' ? 'video' : 'file', size: 28 }),
-      h('div', null, h('strong', null, asset.name), h('p', { className: 'w-muted' }, asset.kind + ' · ' + Math.ceil(asset.bytes / 1024) + ' KB')),
+      h('div', null, h('strong', null, asset.name), h('p', { className: 'w-muted' }, (asset.kind === 'image' ? t('图片 ', 'Image ') + (imageIds.indexOf(asset.id) + 1) + ' / ' + imageIds.length : asset.kind === 'audio' ? t('背景音频', 'Background audio') : t('背景视频', 'Background video')) + ' · ' + Math.ceil(asset.bytes / 1024) + ' KB')),
+      asset.kind === 'image' && imageIds.length > 1 ? h('div', { className: 'w-toolbar media-asset-order' },
+        h(W.Button, { variant: 'ghost', disabled: running || dirty || imageIds.indexOf(asset.id) === 0, 'aria-label': t('上移图片：', 'Move image up: ') + asset.name, onClick: () => move(asset, -1) }, t('上移', 'Move up')),
+        h(W.Button, { variant: 'ghost', disabled: running || dirty || imageIds.indexOf(asset.id) === imageIds.length - 1, 'aria-label': t('下移图片：', 'Move image down: ') + asset.name, onClick: () => move(asset, 1) }, t('下移', 'Move down'))) : null,
       h(W.Button, { variant: 'ghost', icon: 'trash', disabled: running || dirty, onClick: () => setRemove(asset) }, t('移除上传副本', 'Remove uploaded copy'))))) : h(W.Empty, { title: t('还没有上传素材', 'No media uploaded yet'), icon: 'video' }, t('标题卡可以直接导出。需要图片或配乐时，再上传自己的素材。', 'Title cards can be exported as they are. Upload your own media when you need images or music.')),
     remove ? h(W.Dialog, { title: t('移除素材副本', 'Remove media copy'), closeLabel: t('取消', 'Cancel'), busy: running, onClose: () => setRemove(null) }, h('p', null, remove.name), h('p', { className: 'w-muted' }, t('仅移除本工程中的上传副本，原文件保留。', 'Only the uploaded project copy is removed. Your original file is preserved.')), h('div', { className: 'w-toolbar' }, h(W.Button, { variant: 'danger', disabled: running || dirty, onClick: () => perform(async () => { setProject(await api({ action: 'removeAsset', id: project.id, revision: project.revision, asset: remove.id })); setRemove(null); }) }, t('确认移除副本', 'Confirm removal')), h(W.Button, { disabled: running, onClick: () => setRemove(null) }, t('取消', 'Cancel')))) : null);
 }
