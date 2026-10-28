@@ -4,13 +4,13 @@
 
 ![dsh-remotion whale girl plugin cover](https://raw.githubusercontent.com/STARDUSTLC666/dsh-remotion/master/assets/cover-whale-girl.png)
 
-Bring Remotion React video creation skills into DSH.
+Create React videos in DSH with official Remotion skills, template projects, asset upload and ordering, archives, Studio preview and local MP4 export. Use AI-authored projects or start directly from a workbench template.
 
 [![npm](https://img.shields.io/npm/v/dsh-remotion)](https://www.npmjs.com/package/dsh-remotion) [![downloads](https://raw.githubusercontent.com/STARDUSTLC666/dsh-suite/npm-downloads/assets/dsh-remotion-downloads.svg)](https://www.npmjs.com/package/dsh-remotion)
 
 Feedback and contributions are welcome: report [issues](https://github.com/STARDUSTLC666/dsh-remotion/issues) or submit [pull requests](https://github.com/STARDUSTLC666/dsh-remotion/pulls).
 
-Open the new native sidebar workbench after updating and restarting DSH. Settings remains available. See the [workbench guide and validation boundaries](docs/WORKBENCH.md).
+Open the workbench from the native DSH sidebar. See the [workbench guide](docs/WORKBENCH.md) for configuration and operating boundaries.
 
 Bundled skills: official Remotion 4.0.539, twelve skills and their reference resources.
 

@@ -4,13 +4,13 @@
 
 ![dsh-remotion 鲸鱼娘插件封面](https://raw.githubusercontent.com/STARDUSTLC666/dsh-remotion/master/assets/cover-whale-girl.png)
 
-把 Remotion 的 React 视频创作技能接入 DSH。
+在 DSH 中用 React 创作视频：官方 Remotion 技能、模板工程、素材上传与排序、归档、Studio 预览和本地 MP4 导出。可用 AI 编写工程，也可直接使用工作台模板。
 
 [![npm](https://img.shields.io/npm/v/dsh-remotion)](https://www.npmjs.com/package/dsh-remotion) [![downloads](https://raw.githubusercontent.com/STARDUSTLC666/dsh-suite/npm-downloads/assets/dsh-remotion-downloads.svg)](https://www.npmjs.com/package/dsh-remotion)
 
 欢迎使用，遇到问题或有改进建议，请提交 [issues](https://github.com/STARDUSTLC666/dsh-remotion/issues) 和 [PR](https://github.com/STARDUSTLC666/dsh-remotion/pulls)。
 
-更新并重启 DSH 后，可从原生侧栏打开新版工作台，原设置入口继续保留。详见[工作台说明与验收范围](docs/WORKBENCH.md)。
+从 DSH 原生侧栏打开工作台；配置与操作边界见[工作台说明](docs/WORKBENCH.md)。
 
 技能内容：官方 Remotion 4.0.539，12 个技能及完整引用资源。
 
