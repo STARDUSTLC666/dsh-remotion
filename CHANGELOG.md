@@ -2,6 +2,11 @@
 
 [返回简介](README.md) · [使用说明](docs/USAGE.md) · [验证记录](docs/VALIDATION.md)
 
+## 0.9.2 (2026-10-29)
+
+- 同步仓库与 npm 的简明介绍、中英文 README 和反馈入口；本次为文档与包元数据更新。
+- Sync npm descriptions and both README guides with the repository, including issue and pull-request links.
+
 ## 0.9.1 (2026-10-28)
 
 - 同步共享媒体工作台的 HyperFrames 版本表，保持跨插件源文件一致；Remotion 引擎与技能仍固定为 4.0.539。
