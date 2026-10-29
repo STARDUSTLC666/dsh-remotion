@@ -2,6 +2,12 @@
 
 [返回简介](README.md) · [使用说明](docs/USAGE.md) · [验证记录](docs/VALIDATION.md)
 
+## 0.10.0 (2026-10-29)
+
+- 工程库新增关键词搜索和最近 / 最早更新、自然标题排序；保留返回列表时的筛选条件，提供无匹配提示和清空搜索。
+- Add project search and updated / oldest / natural-title sorting, retained filters on return, and a clear no-results state.
+- 当前工程与归档工程可分别筛选，按标题、正文或模板查找；保留运行任务与未保存修改保护。
+
 ## 0.9.2 (2026-10-29)
 
 - 同步仓库与 npm 的简明介绍、中英文 README 和反馈入口；本次为文档与包元数据更新。

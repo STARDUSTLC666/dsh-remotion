@@ -18,6 +18,7 @@ Move images up or down in the Media tab, including with the keyboard. The order 
 
 ## What it does
 
+- Search projects and sort by update time or natural title; keep filters when returning to the library.
 - A settings workbench for templates, editable content, media uploads, official Studio preview and local MP4 export.
 - Title card, product card and slideshow templates in landscape, portrait or square format.
 - Editable project backups, cancellable jobs and a warning when an MP4 uses an older revision.
