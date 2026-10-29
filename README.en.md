@@ -6,7 +6,9 @@
 
 Create React videos in DSH with official Remotion skills, template projects, asset upload and ordering, archives, Studio preview and local MP4 export. Use AI-authored projects or start directly from a workbench template.
 
-[![npm](https://img.shields.io/npm/v/dsh-remotion)](https://www.npmjs.com/package/dsh-remotion) [![downloads](https://raw.githubusercontent.com/STARDUSTLC666/dsh-suite/npm-downloads/assets/dsh-remotion-downloads.svg)](https://www.npmjs.com/package/dsh-remotion)
+[![npm](https://img.shields.io/npm/v/dsh-remotion)](https://www.npmjs.com/package/dsh-remotion) [![downloads](https://raw.githubusercontent.com/STARDUSTLC666/dsh-suite/npm-downloads/assets/dsh-remotion-downloads.svg)](https://www.npmjs.com/package/dsh-remotion) [![total downloads](https://raw.githubusercontent.com/STARDUSTLC666/dsh-suite/npm-downloads/assets/dsh-remotion-total-downloads.svg)](https://www.npmjs.com/package/dsh-remotion)
+
+[Download statistics](https://github.com/STARDUSTLC666/dsh-suite/blob/npm-downloads/README.md)
 
 Feedback and contributions are welcome: report [issues](https://github.com/STARDUSTLC666/dsh-remotion/issues) or submit [pull requests](https://github.com/STARDUSTLC666/dsh-remotion/pulls).
 
@@ -39,9 +41,11 @@ For the web version, replace `desktop` with `web`. Restart DSH after installatio
 
 ## Start using it
 
-Open Settings → Remotion → New video. Save your content, then upload media. Prepare the render environment on first use, inspect the official Studio preview, stop it and export MP4.
-
-Ask: “Make a Remotion video from these assets, preview it in Studio, then export MP4.”
+1. Open Remotion in the sidebar, choose New video, select a template and enter content.
+2. Save the project, upload images, audio or video, and reorder images in Media when needed.
+3. Prepare the official renderer in Environment on first use, then start Studio preview.
+4. Inspect and stop the preview before editing or exporting MP4. Export again after changing the project.
+5. Download MP4 or editable source from Exports, and organize projects with library search and archives.
 
 ## Requirements and configuration
 

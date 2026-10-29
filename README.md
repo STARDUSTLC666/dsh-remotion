@@ -6,7 +6,9 @@
 
 在 DSH 中用 React 创作视频：官方 Remotion 技能、模板工程、素材上传与排序、归档、Studio 预览和本地 MP4 导出。可用 AI 编写工程，也可直接使用工作台模板。
 
-[![npm](https://img.shields.io/npm/v/dsh-remotion)](https://www.npmjs.com/package/dsh-remotion) [![downloads](https://raw.githubusercontent.com/STARDUSTLC666/dsh-suite/npm-downloads/assets/dsh-remotion-downloads.svg)](https://www.npmjs.com/package/dsh-remotion)
+[![npm](https://img.shields.io/npm/v/dsh-remotion)](https://www.npmjs.com/package/dsh-remotion) [![downloads](https://raw.githubusercontent.com/STARDUSTLC666/dsh-suite/npm-downloads/assets/dsh-remotion-downloads.svg)](https://www.npmjs.com/package/dsh-remotion) [![total downloads](https://raw.githubusercontent.com/STARDUSTLC666/dsh-suite/npm-downloads/assets/dsh-remotion-total-downloads.svg)](https://www.npmjs.com/package/dsh-remotion)
+
+[下载统计说明](https://github.com/STARDUSTLC666/dsh-suite/blob/npm-downloads/README.md)
 
 欢迎使用，遇到问题或有改进建议，请提交 [issues](https://github.com/STARDUSTLC666/dsh-remotion/issues) 和 [PR](https://github.com/STARDUSTLC666/dsh-remotion/pulls)。
 
@@ -39,9 +41,11 @@ dsh plugin --profile desktop add dsh-remotion
 
 ## 开始使用
 
-打开「设置 → Remotion」→「新建视频」，填写内容并保存，再上传素材。首次点击「准备渲染环境」下载依赖，完成后启动官方预览，检查画面、停止预览，再导出 MP4。
-
-可说：“用 Remotion 把这些素材做成视频，先在 Studio 预览，再导出 MP4。”
+1. 从左侧栏打开 Remotion，点击“新建视频”，选模板并填写内容。
+2. 保存工程，再上传图片、音频或视频；需要时在“素材”页调整图片顺序。
+3. 首次在“环境”页准备官方渲染环境，完成后启动 Studio 预览。
+4. 核对预览，停止预览后继续编辑或导出 MP4；修改后重新导出才会更新成品。
+5. 在导出记录下载 MP4 或可编辑工程；用工程库搜索和归档整理多个项目。
 
 ## 依赖与配置
 
