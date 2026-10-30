@@ -1,43 +1,35 @@
-# dsh-remotion
+[简体中文](README.md) · **English**
 
-[中文](README.md)
+# Remotion
 
-![dsh-remotion whale girl plugin cover](https://raw.githubusercontent.com/STARDUSTLC666/dsh-remotion/master/assets/cover-whale-girl.png)
-
-Create React videos in DSH with official Remotion skills, template projects, asset upload and ordering, archives, Studio preview and local MP4 export. Use AI-authored projects or start directly from a workbench template.
+**Turn React projects into videos from DSH.**
 
 [![npm](https://img.shields.io/npm/v/dsh-remotion)](https://www.npmjs.com/package/dsh-remotion) [![downloads](https://raw.githubusercontent.com/STARDUSTLC666/dsh-suite/npm-downloads/assets/dsh-remotion-downloads.svg)](https://www.npmjs.com/package/dsh-remotion) [![total downloads](https://raw.githubusercontent.com/STARDUSTLC666/dsh-suite/npm-downloads/assets/dsh-remotion-total-downloads.svg)](https://www.npmjs.com/package/dsh-remotion)
 
-[Download statistics](https://github.com/STARDUSTLC666/dsh-suite/blob/npm-downloads/README.md)
+**[Install](#install) · [Workflow](#start-using-it) · [Full guide](https://github.com/STARDUSTLC666/dsh-remotion/blob/master/docs/REFERENCE.en.md)**
 
-Feedback and contributions are welcome: report [issues](https://github.com/STARDUSTLC666/dsh-remotion/issues) or submit [pull requests](https://github.com/STARDUSTLC666/dsh-remotion/pulls).
+<picture>
+  <source media="(prefers-color-scheme: dark) and (max-width: 640px)" srcset="https://raw.githubusercontent.com/STARDUSTLC666/dsh-remotion/master/docs/assets/intro/workflow-en-mobile-dark.svg">
+  <source media="(max-width: 640px)" srcset="https://raw.githubusercontent.com/STARDUSTLC666/dsh-remotion/master/docs/assets/intro/workflow-en-mobile-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/STARDUSTLC666/dsh-remotion/master/docs/assets/intro/workflow-en-dark.svg">
+  <img src="https://raw.githubusercontent.com/STARDUSTLC666/dsh-remotion/master/docs/assets/intro/workflow-en-light.svg" alt="Turn React projects into videos from DSH. · workflow illustration" width="100%">
+</picture>
 
-Open the workbench from the native DSH sidebar. See the [workbench guide](docs/WORKBENCH.md) for configuration and operating boundaries.
+## Features
 
-Bundled skills: official Remotion 4.0.539, twelve skills and their reference resources.
-
-Move images up or down in the Media tab, including with the keyboard. The order saves immediately; export again to apply it to a new MP4.
-
-## What it does
-
-- Search projects and sort by update time or natural title; keep filters when returning to the library.
-- A settings workbench for templates, editable content, media uploads, official Studio preview and local MP4 export.
-- Title card, product card and slideshow templates in landscape, portrait or square format.
-- Editable project backups, cancellable jobs and a warning when an MP4 uses an older revision.
-
-- Cover animation, audio, captions, charts and 3D scenes.
-- Guide project creation, Studio preview and rendering.
-- Preserve upstream skills and provide runtime health checks.
+- Use official skills and workbench templates.
+- Manage projects, media order and Studio previews.
+- Render local MP4 files and keep editable project backups.
 
 ## Install
 
-In DSH Desktop, install `dsh-remotion` from the Plugins panel. If the bundled dsh command is available:
+Open **Plugins** in the DSH desktop app and install `dsh-remotion`. If the CLI is available:
 
 ```bash
 dsh plugin --profile desktop add dsh-remotion
 ```
 
-For the web version, replace `desktop` with `web`. Restart DSH after installation.
+For the web profile, replace `desktop` with `web`. Restart that DSH profile after installation. The package’s DSH requirement is `>=0.2.1-rc.3`.
 
 ## Start using it
 
@@ -47,25 +39,33 @@ For the web version, replace `desktop` with `web`. Restart DSH after installatio
 4. Inspect and stop the preview before editing or exporting MP4. Export again after changing the project.
 5. Download MP4 or editable source from Exports, and organize projects with library search and archives.
 
-## Requirements and configuration
+Example request：
 
-The plugin preserves upstream skills and adds a local workbench. First use needs Node.js 22.19+ / 24+ and npm; Remotion retains its [official license](https://www.remotion.dev/license). Dependencies are downloaded only when you explicitly prepare the environment.
+> Create a React video project. Confirm the structure and script, preview in Studio, then export MP4.
 
-Detailed configuration, tool arguments and troubleshooting are in the [usage guide](docs/USAGE.en.md). For standalone development, follow the Node requirement in [package.json](package.json).
+## Before you start
 
-## Documentation
+Prepare the official rendering environment on first use. Render again after editing the project.
 
-- [Usage and troubleshooting](docs/USAGE.en.md)
-- [Changelog](CHANGELOG.md)
-- [Validation scope and history](docs/VALIDATION.md)
-- [Report a problem or suggest a feature](https://github.com/STARDUSTLC666/dsh-remotion/issues)
+Configuration, detailed tools and troubleshooting: [full reference](https://github.com/STARDUSTLC666/dsh-remotion/blob/master/docs/REFERENCE.en.md).
 
 ## Plugin updates
 
-Requires DSH 0.2.1-rc.3 or newer. Update controls sit at the bottom of the existing workbench, or native plugin details for plugins without a workbench. Checks, release notes and preferences expand in place, with no separate update page or settings menu. Automatic checks are on by default; **automatic installation is off by default**. Only explicit opt-in permits compatible stable patches while idle with no unsaved changes. Preferences are independent, with per-plugin disable, deferral and ignore controls. No forced DSH restart or upgrade, and local-source installations stay unchanged. Suite components explain and operate on the whole Suite in the same footer.
+Check updates at the bottom of the workbench or native plugin details. Automatic checks are on by default; **automatic installation is off**. You choose whether to install and when to restart. Suite-managed components update with their bundle. [Update behavior](https://github.com/STARDUSTLC666/dsh-remotion/blob/master/docs/REFERENCE.en.md).
 
-Older releases need one manual update in native plugin management to acquire these controls. Publishing to npm does not replace an existing user installation.
+## Documentation
+
+- [Full usage, configuration and limits](https://github.com/STARDUSTLC666/dsh-remotion/blob/master/docs/REFERENCE.en.md)
+- [Release notes](https://github.com/STARDUSTLC666/dsh-remotion/blob/master/CHANGELOG.md)
+- [Validation scope and history](https://github.com/STARDUSTLC666/dsh-remotion/blob/master/docs/VALIDATION.md)
+
+## Feedback and contributions
+
+If the plugin helps, a Star makes it easier for others to discover. Report problems or suggest improvements in [Issues](https://github.com/STARDUSTLC666/dsh-remotion/issues); code and documentation [PRs](https://github.com/STARDUSTLC666/dsh-remotion/pulls) are welcome. Include versions and reproduction steps, and remove credentials from reports.
 
 ## License
 
-[MIT](LICENSE). Upstream skill licensing is documented in the usage guide.
+[MIT](https://github.com/STARDUSTLC666/dsh-remotion/blob/master/LICENSE)
+
+<a id="what-it-does"></a>
+<a id="requirements-and-configuration"></a>

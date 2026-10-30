@@ -1,7 +1,7 @@
 {
   "name": "dsh-remotion",
-  "version": "0.10.2",
-  "description": "DSH React 视频工作台：官方 Remotion 技能、工程检索、模板、素材排序、Studio 预览与 MP4 导出。欢迎提交 issues 和 PR。",
+  "version": "0.10.3",
+  "description": "在 DSH 里把 React 工程做成视频。 首次使用需准备官方渲染环境 欢迎提交 issues 和 PR。",
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
