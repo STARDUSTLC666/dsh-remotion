@@ -1,6 +1,6 @@
 {
   "name": "dsh-remotion",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "description": "DSH React 视频工作台：官方 Remotion 技能、工程检索、模板、素材排序、Studio 预览与 MP4 导出。欢迎提交 issues 和 PR。",
   "type": "module",
   "main": "lib/index.js",
@@ -23,7 +23,8 @@
     "scripts",
     "docs",
     "CHANGELOG.md",
-    "templates/DESIGN.md"
+    "templates/DESIGN.md",
+    "assets/plugin-icon.webp"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/build-client.mjs && node scripts/build-updates.mjs",
@@ -77,5 +78,6 @@
   },
   "homepage": "https://github.com/STARDUSTLC666/dsh-remotion#readme",
   "author": "stardustlc",
-  "packageManager": "pnpm@11.7.0"
+  "packageManager": "pnpm@11.7.0",
+  "icon": "./assets/plugin-icon.webp"
 }
