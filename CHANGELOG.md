@@ -1,12 +1,18 @@
 # 更新记录
 
-## 0.10.3 (2026-10-30)
+## 0.10.4 (2026-10-30)
 
 - 视频工作台：导出前新增检查清单（标题、画幅与时长、素材数、已保存修订、渲染环境、上一份成品对应的修订）；预览与导出任务显示真实步骤进度，失败后可就同一修订直接重试；同一工程在别处更新时不再提供会导致反复冲突的「保存后继续」，改为显式重新载入或保留输入；保存/导出按钮不可用时给出具体原因；空工程列表提供「新建视频」入口。
 - Pre-export checklist, step progress with in-place retry, conflict-safe save flow, disabled-button reasons and an empty-state action in the video workbench.
 
 - 同步共享 workbench-ui v1.1：Page 外的 Empty / Dialog / Status 自带样式与 `.dshw` 主题作用域，Status 新增 warn 色调。
 - Sync workbench-ui v1.1: Empty / Dialog / Status now carry their own styles and `.dshw` theme scope outside Page, and Status gains a warn tone.
+
+## 0.10.3 (2026-10-30)
+
+- 重整中英文首页：用途、三步流程图、安装入口与操作示例；详细配置与边界集中到完整说明。
+- 保留下载统计、独立更新选择、问题反馈和贡献入口；原封面与运行功能保留。
+- Refresh bilingual landing pages, workflow artwork, quick starts and reference navigation.
 
 
 ## 0.10.2 (2026-10-30)
