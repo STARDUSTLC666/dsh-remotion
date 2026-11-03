@@ -30,7 +30,9 @@ Open Settings → Remotion in DSH Web or Desktop.
 2. Upload local PNG/JPEG copies, one MP3/WAV background audio and one muted MP4 background video. Limits: 20 MB each, 40 MB total. Slideshow follows upload order and needs at least two seconds per image.
 3. Explicitly prepare the environment. It downloads official CLI 4.0.539; installed Chrome is reused, with a browser download only when needed. You can continue editing during preparation. Check the [official Remotion license](https://www.remotion.dev/license) for your use case.
 4. Start official Studio and inspect the picture. Stop this preview before editing or exporting; no window opens automatically.
-5. Export, play and download MP4. Editing preserves earlier MP4s with a revision warning; export again for a new output.
+5. Review the pre-export check (title, canvas and duration, media count, saved revision, renderer, which revision the last MP4 used), then play and download the MP4 in the workbench. Later edits preserve earlier MP4s and display a revision warning. Export again for a new final output.
+
+Preview and export jobs show their current step (for example "Step 3 / 4 · Rendering MP4"), a collapsible job log and a cancel button. A failed job keeps the project and offers "Retry this task" without re-entering input. A project changed elsewhere is never overwritten silently: the banner offers "Reload the latest version (discard my input)" or "Keep my input for now", and the unsaved-changes dialog blocks "Save and continue" so the same conflict cannot repeat. When Save or Export is unavailable, hover the button to read the exact reason (unsaved changes, renderer not prepared, title or duration out of range).
 
 The editable ZIP includes source, data and media. Extract it, run npm install and npm run preview / render. Original template code is MIT; engines retain their own licenses. ZIP import is not yet available in settings.
 

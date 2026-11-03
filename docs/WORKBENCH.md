@@ -14,6 +14,16 @@ Update the plugin, restart DSH and open its native sidebar panel (or More if it 
 
 The UI follows host language and theme without translating user content. Narrow master/detail views have a Back action; editors adapt their columns to available space. Destructive actions require confirmation and edits are protected.
 
+## 任务与冲突 / Jobs and conflicts
+
+预览与导出任务在编辑页顶部就地显示阶段文案、当前步骤（步骤 N / M）、取消按钮和可展开的运行记录。失败时就地提供「重试本次任务」，复用同一已保存修订，无需重新填写；步骤名来自官方 CLI 的真实阶段，进度不虚构百分比。导出按钮先打开导出前检查，列出标题、画幅与时长、素材数、已保存修订、渲染环境和上一份成品对应的修订，确认后才开始渲染。
+
+Jobs render in place above the editor: stage text, a step counter (step N of M), cancel and a collapsible log. A failure offers Retry for the same saved revision instead of discarding input. Steps map to the official CLI stages, so progress is never a fabricated percentage. Export opens a pre-export check listing title, canvas and duration, media count, saved revision, renderer state and which revision the last MP4 used.
+
+同一工程在两个窗口保存时，后保存的一方看到冲突提示，而不是静默覆盖：可重新载入最新版本（放弃当前输入）或保留输入稍后处理；冲突状态下未保存对话框禁用「保存后继续」。
+
+When two windows save the same project, the later one sees a conflict instead of silently overwriting: reload the latest version (discarding input) or keep the input for later. While a conflict is open, the unsaved-changes dialog disables Save and continue.
+
 ## 源码 / Source
 
 编辑 templates/client.js、templates/panels/*.js 与 templates/workbench-ui.js，运行 pnpm run build。lib/client.js 是确定性产物，请随源码提交。公共组件的规范源位于 dsh-suite/ui/workbench-ui.js，Suite 的同步脚本显式分发副本；单个仓库可独立构建和安装。
