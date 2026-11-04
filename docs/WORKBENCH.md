@@ -43,3 +43,9 @@ Edit the template sources and run pnpm run build. Commit generated lib/client.js
 工程列表可按关键词筛选，并按最近更新、最早更新或自然标题顺序排列；多个词需要同时匹配。PPT 只查目录中的标题和工程路径；视频查标题、正文和模板，当前列表与归档列表各自保留筛选条件。清空搜索会恢复完整列表，返回工程库会保留刚才的搜索和排序。筛选只在本机列表中执行，不读取未选工程的完整文件，也不修改工程内容。
 
 Search the local project list and sort by newest update, oldest update or natural title. Multiple terms must all match. PPT searches catalog titles and paths; video searches titles, text and templates, with separate active/archive filters. Clear restores the full list; returning from editing preserves filters. Filtering does not load unselected project files or change project contents.
+
+## 任务与环境 / Jobs and preparation
+
+工具返回项目编号与任务编号。查询进度使用 `action: job`，取消使用 `action: cancel`，两者的 `job` 参数填写返回的任务编号。关闭 DSH 后任务不能续跑，保存的工程仍保留。
+
+Tool text includes project and job ids. Use the returned job id with `action: job` or `action: cancel`. Saved projects survive a restart; running processes do not resume.

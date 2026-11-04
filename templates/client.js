@@ -223,6 +223,6 @@ h('div', { className: 'bar' }, h('button', { disabled: busy || dirty || activeJo
             locale = ctx.get?.('locale') || ctx.locale;
         }
         catch { } W.register(ctx,{id:'dsh-'+engine+'.workbench',label:()=>title,icon:engine==='hyperframes'?'layers':'play',component:Workbench,inject:()=>({locale}),order:engine==='hyperframes'?65:66});
-ctx.slots.inject('settings.section', () => ctx.slots.register({ name: 'settings.section', id: 'dsh-' + engine, order: engine === 'hyperframes' ? 62 : 63, label: () => title, inject: () => ({ locale }) }, Workbench)); }
+ctx.slots.inject('settings.section', () => ctx.slots.register({ name: 'settings.section', id: 'dsh-__ENGINE__', order: engine === 'hyperframes' ? 62 : 63, label: () => title, inject: () => ({ locale }) }, Workbench)); }
         return { inject: ['slots', 'locale'], apply };
     } });

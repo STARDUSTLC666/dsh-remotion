@@ -224,3 +224,46 @@ test('renderer child does not inherit model or mailbox secrets', async t => {
   const env = JSON.parse(end.lines.find(line => line.startsWith('{')))
   assert.equal(env.home, join(w.store.root, 'user-home')); assert.equal(env.nodeMode, '1'); assert.equal(env.userConfig, join(w.store.root, 'local.npmrc'))
 })
+
+
+test('tool text exposes usable project/job ids for progress and cancellation', () => {
+  const tools = [];
+  installMediaWorkbench({tools:{register(tool){tools.push(tool);return()=>{}}},on(){},inject(){}}, 'hyperframes');
+  const tool = tools.find(t => t.name === 'hyperframes_render');
+  const text = tool.output.render({}, {id:'638af5ab-cb80-478a-86bf-633c5445f3fb',state:'running',stage:'Downloading'})[0].text;
+  assert.match(text, /638af5ab-cb80-478a-86bf-633c5445f3fb/);
+  assert.match(text, /action: job/); assert.match(text, /action: cancel/);
+  const list = tools[0].output.render({}, {projects:[{id:'project-id',title:'Title',revision:1}]})[0].text;
+  assert.match(list, /project-id/);
+});
+test('missing ffprobe prevents dependency downloads and cannot leave a ready stamp', async t => {
+  const {workbench:w} = await fixture(t, 'hyperframes');
+  await mkdir(w.runtime,{recursive:true});
+  await writeFile(join(w.runtime,'ready.json'),'{"previous":true}');
+  const called=[];
+  w.run=async (_job,file,args)=>{called.push(file);if(file==='ffprobe')throw new Error('spawn ffprobe ENOENT')};
+  const job = await w.start('prepare'), result=await finished(w,job.id);
+  assert.equal(result.state,'failed');assert.match(result.stage,/FFprobe/);
+  assert.deepEqual(called,['ffmpeg','ffprobe']);
+  await assert.rejects(readFile(join(w.runtime,'ready.json')),/ENOENT/);
+  assert.equal((await w.environment()).ready,false);
+});
+test('an explicit browser skips ensure, checks both media binaries and persists verified readiness', async t => {
+  const {root,workbench:w} = await fixture(t, 'hyperframes');
+  const browser=join(root,'configured-browser.exe');await writeFile(browser,'fixture executable');
+  const before=process.env.HYPERFRAMES_BROWSER_PATH; process.env.HYPERFRAMES_BROWSER_PATH=browser;
+  t.after(()=>{if(before===undefined)delete process.env.HYPERFRAMES_BROWSER_PATH;else process.env.HYPERFRAMES_BROWSER_PATH=before});
+  const calls=[];
+  w.run=async (_job,file,args)=>{
+    calls.push([file,args]);
+    if(args.includes('install')){const pkg=join(w.runtime,'node_modules/hyperframes');await mkdir(pkg,{recursive:true});await writeFile(join(pkg,'package.json'),JSON.stringify({version:MEDIA_VERSIONS.hyperframes}))}
+  };
+  const job=await w.start('prepare'),result=await finished(w,job.id);
+  assert.equal(result.state,'done');
+  assert.ok(calls.some(([file])=>file==='ffmpeg'));assert.ok(calls.some(([file])=>file==='ffprobe'));
+  assert.equal(calls.some(([,args])=>args.includes('ensure')),false);
+  assert.equal((await w.environment()).ready,true);
+  const stamp=JSON.parse(await readFile(join(w.runtime,'ready.json'),'utf8'));
+  delete stamp.prerequisites;await writeFile(join(w.runtime,'ready.json'),JSON.stringify(stamp));
+  assert.equal((await w.environment()).ready,false,'legacy ready stamps do not prove ffprobe availability');
+});
