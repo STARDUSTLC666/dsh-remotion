@@ -1,6 +1,6 @@
 {
   "name": "dsh-remotion",
-  "version": "0.10.5",
+  "version": "0.10.6",
   "description": "DSH React 视频工作台：官方 Remotion 技能、工程检索、模板、素材排序、Studio 预览与 MP4 导出。欢迎提交 issues 和 PR。",
   "type": "module",
   "main": "lib/index.js",
@@ -56,7 +56,7 @@
   "license": "MIT",
   "engines": {
     "node": "^22.19.0 || >=24.0.0",
-    "dsh": ">=0.2.1-rc.3"
+    "dsh": ">=0.2.2-rc.3"
   },
   "dependencies": {
     "fflate": "0.8.3",
