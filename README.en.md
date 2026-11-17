@@ -2,7 +2,7 @@
 
 # Remotion
 
-**Turn React projects into videos from DSH.**
+**Build and export React video projects in DeepSeek Harness with a 5-theme light studio workbench.**
 
 [![npm](https://img.shields.io/npm/v/dsh-remotion)](https://www.npmjs.com/package/dsh-remotion) [![downloads](https://raw.githubusercontent.com/STARDUSTLC666/dsh-suite/npm-downloads/assets/dsh-remotion-downloads.svg)](https://www.npmjs.com/package/dsh-remotion) [![total downloads](https://raw.githubusercontent.com/STARDUSTLC666/dsh-suite/npm-downloads/assets/dsh-remotion-total-downloads.svg)](https://www.npmjs.com/package/dsh-remotion)
 
@@ -20,6 +20,7 @@
 - Use official skills and workbench templates.
 - Manage projects, media order and Studio previews.
 - Render local MP4 files and keep editable project backups.
+- Adapted for DeepSeek Harness `>=0.2.2-rc.3` with 5 switchable studio themes (Native Airy / Warm Cream / Claude Warmth / Bright 8-Bit / Airy Mint).
 
 ## Install
 

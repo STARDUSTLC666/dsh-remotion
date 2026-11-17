@@ -2,7 +2,7 @@
 
 # Remotion
 
-**在 DSH 里把 React 工程做成视频。**
+**在 DeepSeek Harness 中把 React 工程制作并导出为视频，内置可切换五套明亮风格的工作台界面。**
 
 [![npm](https://img.shields.io/npm/v/dsh-remotion)](https://www.npmjs.com/package/dsh-remotion) [![downloads](https://raw.githubusercontent.com/STARDUSTLC666/dsh-suite/npm-downloads/assets/dsh-remotion-downloads.svg)](https://www.npmjs.com/package/dsh-remotion) [![total downloads](https://raw.githubusercontent.com/STARDUSTLC666/dsh-suite/npm-downloads/assets/dsh-remotion-total-downloads.svg)](https://www.npmjs.com/package/dsh-remotion)
 
@@ -20,6 +20,7 @@
 - 使用官方技能与工作台模板。
 - 管理工程、素材顺序和 Studio 预览。
 - 导出本机 MP4，保留后续可编辑的工程备份。
+- 适配 DeepSeek Harness `>=0.2.2-rc.3`：工作台与弹窗支持「原生清透 / 米白纸感 / Claude 暖书卷 / 8-Bit 像素 / 晴空薄荷」五套明亮主题切换。
 
 ## 安装
 
