@@ -22,6 +22,15 @@
 - Render local MP4 files and keep editable project backups.
 - Adapted for DeepSeek Harness `>=0.2.2-rc.3` with 5 switchable studio themes (Native Airy / Warm Cream / Claude Warmth / Bright 8-Bit / Airy Mint).
 
+<details>
+<summary>See an example</summary>
+
+![Remotion workbench](https://raw.githubusercontent.com/STARDUSTLC666/dsh-remotion/master/docs/assets/intro/screen-en.webp)
+
+Captured in a local DeepSeek Harness environment (Bright 8-Bit theme) with synthetic sample project data.
+
+</details>
+
 ## Install
 
 Open **Plugins** in the DSH desktop app and install `dsh-remotion`. If the CLI is available:

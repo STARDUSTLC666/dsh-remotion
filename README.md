@@ -22,6 +22,15 @@
 - 导出本机 MP4，保留后续可编辑的工程备份。
 - 适配 DeepSeek Harness `>=0.2.2-rc.3`：工作台与弹窗支持「原生清透 / 米白纸感 / Claude 暖书卷 / 8-Bit 像素 / 晴空薄荷」五套明亮主题切换。
 
+<details>
+<summary>查看实际示例</summary>
+
+![Remotion workbench](https://raw.githubusercontent.com/STARDUSTLC666/dsh-remotion/master/docs/assets/intro/screen-zh.webp)
+
+图片来自本地 DeepSeek Harness 验证环境的示例工程（8-Bit 像素主题），使用示例内容。
+
+</details>
+
 ## 安装
 
 在 DSH 桌面版「插件」面板安装 `dsh-remotion`。已配置命令行时也可使用：
