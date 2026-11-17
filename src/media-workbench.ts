@@ -289,11 +289,12 @@ export class MediaWorkbench {
 }
 export function installMediaWorkbench(ctx: any, engine: MediaEngine): MediaWorkbench {
   const workbench = new MediaWorkbench(engine)
+  const disposers: Array<() => void> = [() => workbench.dispose()]
   ctx.inject?.(['connection'], (host: any) => {
-    host.connection?.fetch?.register({ path: workbench.route, methods: ['GET','POST'], requestBody: 'buffered', fetch: (request: Request) => workbench.fetch(request) })
-    host.connection?.fetch?.register({ path: workbench.route + '/upload', methods: ['POST'], requestBody: 'streaming', fetch: (request: Request) => workbench.fetch(request) })
+    const r1 = host.connection?.fetch?.register({ path: workbench.route, methods: ['GET','POST'], requestBody: 'buffered', fetch: (request: Request) => workbench.fetch(request) })
+    const r2 = host.connection?.fetch?.register({ path: workbench.route + '/upload', methods: ['POST'], requestBody: 'streaming', fetch: (request: Request) => workbench.fetch(request) })
+    host.effect?.(() => () => { r2?.(); r1?.() })
   })
-  ctx.on?.('dispose', () => workbench.dispose())
   for (const action of ['project', 'render']) {
     const dispose = ctx.tools?.register({
     name: engine + '_' + action,
@@ -325,7 +326,15 @@ export function installMediaWorkbench(ctx: any, engine: MediaEngine): MediaWorkb
       const result: any = await response.json(); if (!result.ok) throw new Error(result.message); return result.value
     },
     })
-    if (typeof dispose === 'function') ctx.on?.('dispose', dispose)
+    if (typeof dispose === 'function') disposers.push(dispose)
   }
+  let cleaned = false
+  const cleanup = () => {
+    if (cleaned) return
+    cleaned = true
+    for (const fn of disposers.splice(0).reverse()) fn()
+  }
+  ctx.effect?.(() => cleanup)
+  ctx.on?.('dispose', cleanup)
   return workbench
 }

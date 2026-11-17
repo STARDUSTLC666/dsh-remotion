@@ -16,6 +16,7 @@ export interface SkillsPluginContext {
     tools?: {
         register(definition: Record<string, unknown>): () => void;
     };
+    effect?(fn: () => () => void): unknown;
     on?(event: string, listener: () => void): (() => void) | void;
     logger?: {
         warn(message: string): void;

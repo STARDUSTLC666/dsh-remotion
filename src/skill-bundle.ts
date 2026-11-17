@@ -22,6 +22,7 @@ export interface SkillsPluginContext {
     get?(name: string): Promise<SkillRegistration | undefined> | SkillRegistration | undefined
   }
   tools?: { register(definition: Record<string, unknown>): () => void }
+  effect?(fn: () => () => void): unknown
   on?(event: string, listener: () => void): (() => void) | void
   logger?: { warn(message: string): void }
 }
@@ -134,6 +135,7 @@ export function createSkillBundle(options: SkillBundleOptions) {
           try { remove() } catch (error) { warn('卸载失败：' + message(error)) }
         }
       }
+      ctx.effect?.(() => dispose)
       ctx.on?.('dispose', dispose)
 
       for (const result of inspectAll()) {
