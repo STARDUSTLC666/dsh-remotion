@@ -1,7 +1,7 @@
 function MediaCanvas({ project, fields, render, dirty, stale, job, running, ready, busy, start, perform, setNotice, t }) {
   const previewing = job?.kind === 'preview' && job.state === 'running';
   const ratio = fields.format === 'portrait' ? '9 / 16' : fields.format === 'square' ? '1 / 1' : '16 / 9';
-  return h('div', { className: 'media-preview-workspace' },
+  return h('div', { className: 'media-preview-workspace', 'data-tour': 'media-preview' },
     h('div', { className: 'w-toolbar' },
       h(W.Button, { icon: 'play', disabled: !project || running || dirty || !ready, title: !ready ? t('先在“环境”页准备渲染工具。', 'Prepare the renderer in Environment first.') : undefined, onClick: () => start('preview') }, t('启动 Studio 预览', 'Start Studio preview')),
       h(W.Button, { icon: 'close', disabled: busy || !previewing, onClick: () => perform(async () => { await api({ action: 'cancel', job: job.id }); setNotice(t('已请求停止；正在关闭本次任务。', 'Stopping this job.')); }) }, t('停止预览', 'Stop preview')),
