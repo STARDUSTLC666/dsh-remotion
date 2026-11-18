@@ -32,7 +32,7 @@ function createMiniEnv({ withHostPrimitives = false, throwStorage = false } = {}
       return { tag, setAttribute() {}, click() {}, remove() {}, style: {} }
     },
     querySelectorAll(selector) {
-      if (selector === '[data-dsh-portal-synced]') return portalOverlays
+      if (selector.includes('[data-dsh-portal-synced]')) return portalOverlays
       return []
     },
   }
@@ -256,6 +256,7 @@ test('Workbench UI v2 integrates @deepseek-ai/dsh-client-ui-primitives lazily an
   const rootSection = hostEnv.findAll(tree, n => n.type === 'section' && n.props?.['data-dsh-style'])[0]
   assert.ok(rootSection, 'workbench root section carries data-dsh-style')
   assert.equal(rootSection.props['data-dsh-style'], 'harness')
+  assert.equal(rootSection.props['data-dsh-font'], 'arcade')
   assert.equal(rootSection.props['data-main'], 'true')
 
   // Switch to New video view and verify host Input primitive is used
@@ -282,13 +283,14 @@ test('Workbench UI v2 integrates @deepseek-ai/dsh-client-ui-primitives lazily an
   const fallbackTree = fallbackEnv.render(fallbackComp, { workbench: true, locale: { getSnapshot: () => ({ active: 'en' }) } })
   const fallbackRoot = fallbackEnv.findAll(fallbackTree, n => n.type === 'section' && n.props?.['data-dsh-style'])[0]
   assert.equal(fallbackRoot.props['data-dsh-style'], 'harness')
+  assert.equal(fallbackRoot.props['data-dsh-font'], 'arcade')
   const icons = fallbackEnv.findAll(fallbackTree, n => n.type === 'svg' && n.props?.['data-dsh-icon'])
   assert.ok(icons.some(svg => svg.props['data-dsh-icon'] === 'plus'))
   assert.ok(icons.some(svg => svg.props['data-dsh-icon'] === 'refresh'))
   assert.ok(icons.some(svg => svg.props['data-dsh-icon'] === 'down'))
 })
 
-test('5-preset StyleSwitcher syncs localStorage, dsh-stardust-style events, and portaled Dialog overlays', () => {
+test('13-preset StyleSwitcher & 8-preset FontSwitcher (default arcade) sync localStorage, custom events, and portaled Dialog overlays', () => {
   const env = createMiniEnv({ withHostPrimitives: false })
   const sandbox = {
     window: env.window,
@@ -301,7 +303,12 @@ test('5-preset StyleSwitcher syncs localStorage, dsh-stardust-style events, and 
   const W = sandbox.__W
   assert.ok(W.styles.includes(String.raw`.w-tour-layer[popover]:is(:popover-open, .\:popover-open)`), 'evaluated CSS contains .\\:popover-open polyfill selector')
 
-  assert.deepEqual([...W.DSH_STYLES.map(s => s.id)], ['harness', 'cream', 'claude', 'pixel8bit', 'mint'])
+  const expectedStyles = ['harness', 'cream', 'claude', 'pixel8bit', 'mint', 'glass', 'eink', 'blueprint', 'risograph', 'win98', 'songhui', 'frutiger', 'gazette']
+  const expectedFonts = ['arcade', 'auto', 'songkai', 'fangsong', 'poster', 'retro98', 'serif', 'modern']
+  assert.deepEqual([...W.DSH_STYLES.map(s => s.id)], expectedStyles)
+  assert.deepEqual([...W.DSH_FONTS.map(f => f.id)], expectedFonts)
+  assert.equal(W.DSH_DEFAULT_FONT, 'arcade')
+  assert.equal(W.readDshFont(env.window), 'arcade')
 
   function StudioFixture() {
     return env.React.createElement('div', null,
@@ -310,18 +317,32 @@ test('5-preset StyleSwitcher syncs localStorage, dsh-stardust-style events, and 
   }
 
   let tree = env.render(StudioFixture)
+  const rootSection = env.findAll(tree, n => n.type === 'section' && n.props?.['data-dsh-style'])[0]
+  assert.equal(rootSection.props['data-dsh-font'], 'arcade')
+
   const trigger = env.findAll(tree, n => n.type === 'button' && n.props?.className?.includes('dsh-style-trigger'))[0]
   assert.ok(trigger, 'StyleSwitcher trigger renders in Page header')
   assert.equal(trigger.props['aria-expanded'], false)
+
+  const fontTrigger = env.findAll(tree, n => n.type === 'button' && n.props?.className?.includes('dsh-font-trigger'))[0]
+  assert.ok(fontTrigger, 'FontSwitcher trigger renders beside StyleSwitcher in Page header')
+  assert.equal(fontTrigger.props['aria-expanded'], false)
 
   trigger.props.onClick()
   tree = env.render(StudioFixture)
   const openTrigger = env.findAll(tree, n => n.type === 'button' && n.props?.className?.includes('dsh-style-trigger'))[0]
   assert.equal(openTrigger.props['aria-expanded'], true)
   const menuItems = env.findAll(tree, n => n.type === 'button' && n.props?.role === 'menuitemradio')
-  assert.equal(menuItems.length, 5, 'all 5 style presets appear in menu')
+  assert.equal(menuItems.length, 13, 'all 13 style presets appear in menu')
 
-  for (const styleId of ['cream', 'claude', 'pixel8bit', 'mint', 'harness']) {
+  fontTrigger.props.onClick()
+  tree = env.render(StudioFixture)
+  const openFontTrigger = env.findAll(tree, n => n.type === 'button' && n.props?.className?.includes('dsh-font-trigger'))[0]
+  assert.equal(openFontTrigger.props['aria-expanded'], true)
+  const fontMenuItems = env.findAll(tree, n => n.type === 'button' && n.props?.role === 'menuitemradio')
+  assert.equal(fontMenuItems.length, 8, 'all 8 font presets appear in menu')
+
+  for (const styleId of expectedStyles) {
     W.writeDshStyle(styleId, env.window)
     assert.equal(env.storage.get('dsh-stardust:ui-style'), styleId)
     assert.equal(env.dispatched.at(-1)?.type, 'dsh-stardust-style')
@@ -331,33 +352,180 @@ test('5-preset StyleSwitcher syncs localStorage, dsh-stardust-style events, and 
       assert.equal(overlay.getAttribute('data-window-drag-exclude'), '', 'portaled dialog receives data-window-drag-exclude')
     }
   }
+
+  for (const fontId of [...expectedFonts.slice(1), 'arcade']) {
+    W.writeDshFont(fontId, env.window)
+    assert.equal(env.storage.get('dsh-stardust:ui-font'), fontId)
+    assert.equal(env.dispatched.at(-1)?.type, 'dsh-stardust-font')
+    assert.equal(env.dispatched.at(-1)?.detail?.font, fontId)
+    for (const overlay of env.portalOverlays) {
+      assert.equal(overlay.getAttribute('data-dsh-font'), fontId, 'portaled dialog receives synced data-dsh-font')
+    }
+  }
 })
 
-test('themes, soft-slate dark mode, 8-bit physics, clearances, drag exclusions and update footer are preserved', () => {
+test('v3 13 themes, 8 font pairings, deepened materiality, 48px header, sliding tabs, resizer, skeleton, row actions & update footer are preserved', () => {
   // 1. Never too dark: soft breathable slate in host dark mode, no pitch-black or legacy hardcoded dark chrome
   assert.match(BUNDLE, /body\[data-ds-dark-theme\] \[data-dsh-style="harness"\]/)
   assert.ok(BUNDLE.includes('#1f232b') && BUNDLE.includes('#272c36'), 'soft breathable slate tokens present')
   assert.doesNotMatch(BUNDLE, /background:#000\b|background:#090a0f|background:#0b0d13|background:#14171c|background:#142D39|background:#df5639/i)
 
-  // 2. All 5 switchable [data-dsh-style] presets + 8-bit stepped press physics
-  for (const preset of ['[data-dsh-style="harness"]', '[data-dsh-style="cream"]', '[data-dsh-style="claude"]', '[data-dsh-style="pixel8bit"]', '[data-dsh-style="mint"]']) {
-    assert.ok(BUNDLE.includes(preset), 'missing theme selector ' + preset)
+  // 2. All 13 switchable [data-dsh-style] presets + zero stale sakura/matcha presets + deepened materiality
+  for (const preset of ['harness', 'cream', 'claude', 'pixel8bit', 'mint', 'glass', 'eink', 'blueprint', 'risograph', 'win98', 'songhui', 'frutiger', 'gazette']) {
+    assert.ok(BUNDLE.includes('[data-dsh-style="' + preset + '"]'), 'missing theme selector ' + preset)
   }
+  assert.doesNotMatch(BUNDLE, /data-dsh-style="(sakura|matcha)"/, 'stale sakura/matcha presets must be removed')
+  assert.ok(BUNDLE.includes('3px 3px 0 #ebe3d1'), 'cream stacked paper shadow present')
+  assert.ok(BUNDLE.includes('1px dashed var(--dsw-alias-border-l2)'), 'cream dashed row dividers present')
+  assert.ok(BUNDLE.includes('data-dsh-serif'), 'claude editorial serif selector present')
   assert.match(BUNDLE, /translate:\s*1px 1px\s*!important/, '8-bit stepped press physics present')
   assert.match(BUNDLE, /box-shadow:\s*2px 2px 0px #1e2826/, '8-bit crisp pixel shadow present')
+  assert.ok(BUNDLE.includes('.dsh-pixel-cursor'), '8-bit active cursor present')
+  assert.ok(BUNDLE.includes('.dsh-progress-bar'), 'stepped pixel progress bar present')
+  assert.ok(BUNDLE.includes('backdrop-filter: blur(14px) saturate(140%)'), 'glass frosted backdrop present')
+  assert.ok(BUNDLE.includes('#f2f1ec') && BUNDLE.includes('#171716'), 'eink paper & charcoal tokens present')
+  assert.ok(BUNDLE.includes('#eaf3fb') && BUNDLE.includes('#0d3b66') && BUNDLE.includes('#e05a2b'), 'blueprint cyanotype tokens present')
+  assert.ok(BUNDLE.includes('#faf6ee') && BUNDLE.includes('#ff3e7f') && BUNDLE.includes('#fde047'), 'risograph zine tokens present')
+  assert.ok(BUNDLE.includes('#dcdcdc') && BUNDLE.includes('#1b4f9c'), 'win98 retro tokens present')
+  assert.ok(BUNDLE.includes('#f7f3e8') && BUNDLE.includes('#b83b2a'), 'songhui xuan tokens present')
+  assert.ok(BUNDLE.includes('#eaf7ff') && BUNDLE.includes('#0284c7'), 'frutiger aqua tokens present')
+  assert.ok(BUNDLE.includes('#f6f3ec') && BUNDLE.includes('#9b1c1c') && BUNDLE.includes('4px double #161514'), 'gazette broadsheet tokens present')
 
-  // 3. Small-button SVG micro-animations + prefers-reduced-motion
+  // 2b. All 8 [data-dsh-font] overrides + dual-layer typography variables
+  for (const fontId of ['songkai', 'fangsong', 'poster', 'retro98', 'serif', 'arcade', 'modern']) {
+    assert.ok(BUNDLE.includes('[data-dsh-font="' + fontId + '"]'), 'missing font override selector ' + fontId)
+  }
+  assert.ok(BUNDLE.includes('--dsh-font-display') && BUNDLE.includes('--dsh-font-body') && BUNDLE.includes('--dsh-font-mono'), 'dual-layer font variables present')
+  assert.ok(BUNDLE.includes('.dsh-font-trigger') && BUNDLE.includes('.dsh-font-glyph'), 'FontSwitcher chrome selectors present')
+
+  // 3. v3 Layout & Motion primitives
+  for (const marker of ['.dsh-header', '.dsh-tab-indicator', '.dsh-split-resizer', '.dsh-skeleton', '.dsh-row-actions']) {
+    assert.ok(BUNDLE.includes(marker), 'missing v3 layout primitive ' + marker)
+  }
+
+  // 4. Small-button SVG micro-animations + prefers-reduced-motion + forced-colors
   for (const iconAnim of ['data-dsh-icon="play"', 'data-dsh-icon="refresh"', 'data-dsh-icon="plus"', 'data-dsh-icon="close"', 'data-dsh-icon="download"', 'data-dsh-icon="trash"', 'data-dsh-icon="down"']) {
     assert.ok(BUNDLE.includes(iconAnim), 'missing icon micro-animation rule ' + iconAnim)
   }
   assert.match(BUNDLE, /@media\s*\(prefers-reduced-motion:\s*reduce\)/)
+  assert.match(BUNDLE, /@media\s*\(forced-colors:\s*active\)/)
 
-  // 4. DSH >=0.2.2-rc.3 host clearances, drag exclusions & @stardustlc/dsh-updates footer wrapper
+  // 5. DSH >=0.2.2-rc.3 host clearances, drag exclusions & @stardustlc/dsh-updates footer wrapper
   assert.ok(BUNDLE.includes('--dsh-frame-top-clearance'), 'top clearance token present')
   assert.ok(BUNDLE.includes('--dsh-frame-leading-clearance'), 'leading clearance token present')
   assert.ok(BUNDLE.includes('data-window-drag-exclude'), 'window drag exclusion present')
   assert.ok(BUNDLE.includes('data-plugin-update-footer'), 'plugin update footer selector/hook preserved')
   assert.ok(BUNDLE.includes('__stardustUpdatesInlinePage'), 'build-updates.mjs wrapped W.Page successfully')
+})
+
+test('UI v3 primitives: 48px header, sliding tabs, resizable split columns, shimmer skeleton & row hover quick actions', async () => {
+  const env = createMiniEnv({ withHostPrimitives: false })
+  const sandbox = {
+    window: env.window,
+    document: env.document,
+    CustomEvent: env.window.CustomEvent,
+    React: env.React,
+    __W: null,
+  }
+  runInNewContext(WORKBENCH_UI + '\n__W = createWorkbenchUI(React);', sandbox)
+  const W = sandbox.__W
+
+  // Resizable split hook + SplitResizer keyboard & double-click reset + localStorage
+  let latestSplit
+  function SplitFixture() {
+    latestSplit = W.useResizableSplit({ key: 'dsh-test:split', initial: 272, min: 210, max: 420, win: env.window })
+    return env.React.createElement('div', { className: 'dsh-split-pane', style: latestSplit.paneStyle },
+      env.React.createElement('div', { className: 'dsh-split-leading' }, 'left'),
+      env.React.createElement(W.SplitResizer, { ...latestSplit.resizerProps, label: 'Resize column' }),
+      env.React.createElement('div', { className: 'dsh-split-trailing' }, 'right'))
+  }
+  let splitTree = env.render(SplitFixture)
+  const sep = env.findAll(splitTree, n => n.props?.role === 'separator')[0]
+  assert.ok(sep, 'SplitResizer renders role="separator"')
+  assert.equal(sep.props['aria-valuenow'], 272)
+  assert.equal(sep.props['data-window-drag-exclude'], '')
+  sep.props.onKeyDown({ key: 'ArrowRight', preventDefault() {} })
+  splitTree = env.render(SplitFixture)
+  assert.equal(latestSplit.size, 288)
+  assert.equal(env.storage.get('dsh-test:split'), '288')
+  sep.props.onDoubleClick()
+  splitTree = env.render(SplitFixture)
+  assert.equal(latestSplit.size, 272)
+
+  // Loading state renders DshSkeleton instead of static text
+  const regs = []
+  env.plugin.apply({
+    locale: { getSnapshot: () => ({ active: 'zh' }) },
+    slots: {
+      inject(_name, fn) { fn() },
+      register(meta, component) { regs.push({ meta, component }); return () => {} },
+    },
+  })
+  const main = regs.find(r => r.meta.name === 'main')
+  const loadingTree = env.render(main.component, { workbench: true, locale: { getSnapshot: () => ({ active: 'zh' }) } })
+  assert.ok(env.findAll(loadingTree, n => n.props?.className?.includes('dsh-skeleton')).length > 0, 'initial loading uses DshSkeleton shimmer')
+
+  // Populated workbench renders 48px .dsh-header with inline sliding tabs, row hover quick actions, and editor SplitResizers
+  const projectEnv = createMiniEnv({ withHostPrimitives: false })
+  let loaded2
+  projectEnv.window.__ModuleLoader__.load = entry => { loaded2 = entry }
+  const sampleProject = { id: 'p1', title: '产品发布片', body: '第一行', template: 'title', format: 'landscape', duration: 8, revision: 1, updated: new Date().toISOString(), assets: [], renders: [] }
+  runInNewContext(BUNDLE, {
+    window: projectEnv.window,
+    document: projectEnv.document,
+    CustomEvent: projectEnv.window.CustomEvent,
+    Event: projectEnv.window.CustomEvent,
+    fetch: async (_url, init) => {
+      const body = init?.body ? JSON.parse(init.body) : {}
+      if (body.action === 'get') {
+        return { ok: true, status: 200, json: async () => ({ ok: true, value: sampleProject }) }
+      }
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          ok: true,
+          value: {
+            projects: [sampleProject],
+            archivedProjects: [],
+            environment: { ready: true, hint: 'Ready' },
+            templates: [{ id: 'title', zh: '标题卡', en: 'Title card' }],
+            jobs: [],
+          },
+        }),
+      }
+    },
+    setTimeout,
+    clearTimeout,
+    setInterval: () => 0,
+    clearInterval() {},
+    URL,
+    URLSearchParams,
+  })
+  const plugin2 = loaded2.factory(name => { if (name === 'react') return projectEnv.React; throw new Error(name) })
+  const regs2 = []
+  plugin2.apply({
+    locale: { getSnapshot: () => ({ active: 'zh' }) },
+    slots: { inject(_n, fn) { fn() }, register(meta, component) { regs2.push({ meta, component }); return () => {} } },
+  })
+  const main2 = regs2.find(r => r.meta.name === 'main')
+  projectEnv.render(main2.component, { workbench: true, locale: { getSnapshot: () => ({ active: 'zh' }) } })
+  for (const eff of [...projectEnv.effects]) await eff()
+  for (let i = 0; i < 6; i++) await Promise.resolve()
+  let libTree = projectEnv.render(main2.component, { workbench: true, locale: { getSnapshot: () => ({ active: 'zh' }) } })
+  assert.ok(projectEnv.findAll(libTree, n => n.type === 'header' && n.props?.className?.includes('dsh-header')).length === 1, 'unified 48px header rendered')
+  assert.ok(projectEnv.findAll(libTree, n => n.props?.className?.includes('dsh-tab-indicator')).length === 1, 'sliding tab indicator rendered in header')
+  assert.ok(projectEnv.findAll(libTree, n => n.props?.className?.includes('dsh-row-actions')).length >= 1, 'row hover quick-action bar rendered on project row')
+  assert.ok(projectEnv.findAll(libTree, n => n.props && Object.hasOwn(n.props, 'data-dsh-serif')).length >= 1, 'editorial serif markers present')
+
+  // Open project -> verify resizable SplitResizer columns in editor
+  const rowBtn = projectEnv.findAll(libTree, n => n.type === 'button' && n.props?.className === 'w-row-button')[0]
+  assert.ok(rowBtn, 'project row button renders')
+  await rowBtn.props.onClick()
+  for (let i = 0; i < 6; i++) await Promise.resolve()
+  const editorTree = projectEnv.render(main2.component, { workbench: true, locale: { getSnapshot: () => ({ active: 'zh' }) } })
+  assert.equal(projectEnv.findAll(editorTree, n => n.props?.role === 'separator').length, 2, 'editor renders 2 DshSplitResizer separators for fields & inspector columns')
+  assert.ok(projectEnv.findAll(editorTree, n => n.props?.className?.includes('dsh-tab-indicator')).length === 1, 'editor header retains sliding tab indicator')
 })
 
 test('HostMenuWithStyle and HostModalWithStyle sync portaled host Menu and Modal overlays, and apply() cleans up via ctx.effect', async () => {
@@ -395,8 +563,10 @@ test('HostMenuWithStyle and HostModalWithStyle sync portaled host Menu and Modal
   tree = hostEnv.render(PortalFixture)
   assert.ok(hostEnv.portalOverlays.length >= 2, 'both host Menu and host Modal receive __dsh_portal_sync__ callback refs')
   W.writeDshStyle('pixel8bit', hostEnv.window)
+  W.writeDshFont('fangsong', hostEnv.window)
   for (const overlay of hostEnv.portalOverlays) {
     assert.equal(overlay.getAttribute('data-dsh-style'), 'pixel8bit')
+    assert.equal(overlay.getAttribute('data-dsh-font'), 'fangsong')
     assert.equal(overlay.getAttribute('data-window-drag-exclude'), '')
   }
 
