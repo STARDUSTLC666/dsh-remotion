@@ -1,5 +1,11 @@
 # 更新记录
 
+
+## 0.12.1 (2026-11-19)
+
+- 修复内嵌工作台弹窗和备用输入控件在状态变化后重建、失焦的问题；延迟解析宿主时缓存稳定组件类型。
+- Cache stable workbench control types to prevent modal/input remounts and focus resets.
+
 ## 0.12.0 (2026-11-18)
 
 - **工作台 UI v3、13 套明亮风格与 8 套中英双层字体搭配**：全新升级 48px 单行顶栏、滑动标签指示器、可拖拽分栏（`DshSplitResizer`）、微光骨架屏（`DshSkeleton`）与悬停快捷操作条；工作台主题扩展至 13 套明亮风格（新增「工程晒图 / Blueprint」「波普孔版 / Risograph」「千禧复古 / Win98」「宋韵朱砂 / Song Xuan」「晴空水晶 / Frutiger」「铅字晨报 / Gazette」等，移除旧版樱粉/抹茶），并新增独立字体切换器（`FontSwitcher` `字`/`Aa`，支持 8 套中英文双层字体搭配，默认「幼圆等宽 / YouYuan Mono」）。
