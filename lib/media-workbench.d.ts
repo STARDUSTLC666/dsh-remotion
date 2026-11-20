@@ -17,6 +17,7 @@ export declare class MediaWorkbench {
     readonly route: string;
     readonly runtime: string;
     private jobs;
+    private starting;
     private disposed;
     constructor(engine: MediaEngine, root?: string);
     private browserFile;

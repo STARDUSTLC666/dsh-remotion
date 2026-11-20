@@ -1,5 +1,11 @@
 # 更新记录
 
+## 0.12.5 (2026-11-20)
+
+- 媒体下载改为有界缓冲流式传输，支持开放与尾部 Range，取消下载时释放文件句柄，避免重复播放请求将完整视频反复装入内存。
+- 修复异步环境检查中的任务启动竞态、卸载后延迟启动，以及取消后仍启动安装器或渲染器的问题；与 Hyperframes 保持共享实现同步。
+- Stream media downloads with bounded buffering and byte-range support; prevent competing starts and child-process launches after cancellation or disposal while retaining shared-source parity.
+- 同步共享更新组件 0.2.9，修复取消窗口和失败响应清理，并确保运行中旧协调器在空闲后接管修复。
 
 ## 0.12.4 (2026-11-20)
 

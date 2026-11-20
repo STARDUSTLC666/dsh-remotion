@@ -202,6 +202,61 @@ test('background output is recorded against the rendered revision, with range do
   const end = await finished(w, j.id); assert.equal(end.state, 'done'); const current = await store.get(p.id); assert.equal(current.revision, 2); assert.equal(current.renders[0].revision, 1)
   const response = await w.fetch(new Request(`http://dsh.test${w.route}?kind=mp4&id=${p.id}&render=${end.output}`, { headers: { range: 'bytes=4-7' } })); assert.equal(response.status, 206); assert.equal(await response.text(), 'ftyp')
 })
+test('media downloads stream bounded chunks and support open and suffix byte ranges', async t => {
+  const { store, workbench:w } = await fixture(t), p = await store.create(fields)
+  const renderId = 'e0ce5e94-fc3a-4e8f-9e63-398baf289347', dir = join(await store.path(p.id), 'runs', renderId)
+  const bytes = Buffer.alloc(1024 * 1024, 7); bytes.write('ftyp', 4)
+  await mkdir(dir, { recursive:true }); await writeFile(join(dir, 'final.mp4'), bytes)
+  await store.edit(p.id, undefined, current => { current.renders.push({ id:renderId, revision:1, bytes:bytes.length, created:new Date().toISOString() }) }, false)
+  const url = `http://dsh.test${w.route}?kind=mp4&id=${p.id}&render=${renderId}&download=1`
+  const response = await w.fetch(new Request(url)), reader = response.body.getReader()
+  assert.equal(response.status, 200); assert.equal(response.headers.get('content-length'), String(bytes.length))
+  assert.match(response.headers.get('content-disposition'), /attachment/)
+  const first = await reader.read(); assert.ok(first.value.length <= 64 * 1024, 'a download must not buffer the entire media file')
+  assert.deepEqual(Buffer.from(first.value), bytes.subarray(0, first.value.length)); await reader.cancel()
+  for (const [range, start, end] of [['bytes=4-7', 4, 7], ['bytes=1048570-', 1048570, 1048575], ['bytes=-6', 1048570, 1048575], ['bytes=-2000000', 0, 1048575]]) {
+    const part = await w.fetch(new Request(url, { headers:{range} }))
+    assert.equal(part.status, 206); assert.equal(part.headers.get('content-range'), `bytes ${start}-${end}/${bytes.length}`)
+    assert.match(part.headers.get('content-disposition'), /attachment/)
+    assert.deepEqual(Buffer.from(await part.arrayBuffer()), bytes.subarray(start, end + 1))
+  }
+  for (const range of ['bytes=-0', 'bytes=1048576-', 'bytes=8-4', 'bytes=0-1,3-4', 'bytes=9007199254740992-']) {
+    const part = await w.fetch(new Request(url, { headers:{range} }))
+    assert.equal(part.status, 416); assert.equal(part.headers.get('content-range'), `bytes */${bytes.length}`)
+  }
+})
+test('starting a job reserves its kind before loading the environment and releases failed starts', async t => {
+  const { store, workbench:w } = await fixture(t), p = await store.create(fields)
+  let release
+  const environment = new Promise(resolve => { release = resolve })
+  w.environment = () => environment
+  w.execute = async job => { job.view.state = 'done' }
+  const first = w.start('render', p.id, p.revision)
+  const competing = assert.rejects(w.start('render', p.id, p.revision), /已有同类任务/)
+  const preparing = assert.rejects(w.start('prepare'), /已有同类任务/)
+  release({ ready:true }); await Promise.all([first, competing, preparing])
+  w.environment = async () => ({ ready:false })
+  await assert.rejects(w.start('render', p.id, p.revision), /准备渲染环境/)
+  w.environment = async () => ({ ready:true })
+  const job = await w.start('render', p.id, p.revision); assert.equal(job.state, 'done')
+})
+test('unloading during environment checks prevents a delayed job from starting', async t => {
+  const { store, workbench:w } = await fixture(t), p = await store.create(fields)
+  let release, executions = 0
+  w.environment = () => new Promise(resolve => { release = resolve })
+  w.execute = async job => { executions++; job.view.state = 'done' }
+  const pending = w.start('render', p.id, p.revision)
+  w.dispose(); release({ ready:true })
+  await assert.rejects(pending, /卸载/); assert.equal(executions, 0)
+})
+test('cancellation while preparing child directories cannot launch a late process', async t => {
+  const { root, workbench:w } = await fixture(t), marker = join(root, 'unexpected-child.txt')
+  const job = { controller:new AbortController(), view:{kind:'render', lines:[]} }
+  const running = w.run(job, process.execPath, ['-e', 'require("node:fs").writeFileSync(process.argv[1], "unexpected dispatch")', marker], root)
+  job.controller.abort(new Error('cancel before launch'))
+  await assert.rejects(running)
+  assert.equal(await stat(marker).then(() => true, () => false), false, 'cancelled jobs cannot start an installer or renderer')
+})
 test('failed outputs never become downloadable successful renders', async t => {
   const { workbench: w, store } = await fixture(t), p = await store.create(fields)
   await fakeRuntime(w, `require('node:fs').writeFileSync('final.mp4','not an MP4'.repeat(100));`)

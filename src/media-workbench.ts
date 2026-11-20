@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs'
 import { mkdir, readFile, writeFile, stat, symlink, copyFile, open, unlink, realpath } from 'node:fs/promises'
 import { basename, dirname, join, delimiter, toNamespacedPath } from 'node:path'
 import { createServer } from 'node:net'
+import { Readable } from 'node:stream'
 import lockfile from 'proper-lockfile'
 import { zipSync, strToU8 } from 'fflate'
 import { MediaStore, mediaId, MediaConflict } from './media-store.js'
@@ -41,6 +42,7 @@ export class MediaWorkbench {
   readonly route: string
   readonly runtime: string
   private jobs = new Map<string, RunningJob>()
+  private starting = new Set<MediaJob['kind']>()
   private disposed = false
   constructor(readonly engine: MediaEngine, root?: string) { this.store = new MediaStore(engine, root); this.route = '/api/dsh-' + engine + '/workbench'; this.runtime = join(this.store.root, 'runtime') }
   private async browserFile(value: unknown): Promise<string> {
@@ -84,6 +86,7 @@ export class MediaWorkbench {
     await mkdir(join(this.store.root, 'tmp'), { recursive: true })
     await mkdir(join(this.store.root, 'user-home/AppData/Roaming'), { recursive: true })
     await mkdir(join(this.store.root, 'user-home/AppData/Local'), { recursive: true })
+    job.controller.signal.throwIfAborted()
     return new Promise((resolve, reject) => {
       const child = spawn(file, args, { cwd, env: { ...childEnv(this.store.root), ...environment }, windowsHide: true, shell: false, detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'] }); job.child = child
       const abort = () => this.stopChild(job); job.controller.signal.addEventListener('abort', abort, { once: true })
@@ -96,15 +99,21 @@ export class MediaWorkbench {
   private cli(): string { return join(this.runtime, 'node_modules', this.engine === 'hyperframes' ? 'hyperframes/bin/hyperframes.mjs' : '@remotion/cli/remotion-cli.js') }
   async start(kind: MediaJob['kind'], id?: string, revision?: unknown): Promise<MediaJob> {
     if (this.disposed) throw new Error('插件已卸载，请重新加载。')
-    if ([...this.jobs.values()].some(j => j.view.state === 'running' && (j.view.kind === kind || j.view.kind === 'prepare' || kind === 'prepare'))) throw new Error('已有同类任务运行，请等待完成或明确取消。')
-    if (kind !== 'prepare' && !(await this.environment()).ready) throw new Error('请先点击“准备渲染环境”，完成首次下载。')
-    const snapshot = kind === 'prepare' ? undefined : await this.store.snapshot(mediaId(id), revision)
-    if (snapshot) projectSources(snapshot.project, this.engine)
-    const job: RunningJob = { view: { id: randomUUID(), kind, projectId: snapshot?.project.id, revision: snapshot?.project.revision, state: 'running', stage: kind === 'prepare' ? '下载环境' : '准备修订快照', lines: [] }, controller: new AbortController() }
-    if (this.jobs.size >= 30) { const old = [...this.jobs.values()].find(j => j.view.state !== 'running'); if (old) this.jobs.delete(old.view.id); else throw new Error('运行任务过多。') }
-    this.jobs.set(job.view.id, job)
-    void this.execute(job, snapshot)
-    return structuredClone(job.view)
+    const conflicts = (other: MediaJob['kind']) => other === kind || other === 'prepare' || kind === 'prepare'
+    if ([...this.starting].some(conflicts) || [...this.jobs.values()].some(j => j.view.state === 'running' && conflicts(j.view.kind))) throw new Error('已有同类任务运行，请等待完成或明确取消。')
+    // Reserve before asynchronous checks so competing requests cannot both start.
+    this.starting.add(kind)
+    try {
+      if (kind !== 'prepare' && !(await this.environment()).ready) throw new Error('请先点击“准备渲染环境”，完成首次下载。')
+      const snapshot = kind === 'prepare' ? undefined : await this.store.snapshot(mediaId(id), revision)
+      if (snapshot) projectSources(snapshot.project, this.engine)
+      if (this.disposed) throw new Error('插件已卸载，请重新加载。')
+      const job: RunningJob = { view: { id: randomUUID(), kind, projectId: snapshot?.project.id, revision: snapshot?.project.revision, state: 'running', stage: kind === 'prepare' ? '下载环境' : '准备修订快照', lines: [] }, controller: new AbortController() }
+      if (this.jobs.size >= 30) { const old = [...this.jobs.values()].find(j => j.view.state !== 'running'); if (old) this.jobs.delete(old.view.id); else throw new Error('运行任务过多。') }
+      this.jobs.set(job.view.id, job)
+      void this.execute(job, snapshot)
+      return structuredClone(job.view)
+    } finally { this.starting.delete(kind) }
   }
   private async execute(job: RunningJob, snapshot?: { project: MediaProject; assets: Map<string, Buffer> }): Promise<void> {
     let unlock: (() => Promise<void>) | undefined
@@ -240,11 +249,34 @@ export class MediaWorkbench {
           file = join(await this.store.path(id), 'runs', r.id, 'final.mp4'); type = mime.mp4
         } else throw new Error('下载类型无效。')
         await this.store.checkPath(file)
-        const size = (await stat(file)).size; if (size > 200 * 1024 * 1024) throw new Error('成品过大，请从本地工程目录取回。')
-        const bytes = await readFile(file), range = request.headers.get('range'), headers: Record<string, string> = { 'content-type': type, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'accept-ranges': 'bytes' }
-        if (range) { const match = /^bytes=(\d+)-(\d*)$/.exec(range); if (!match) return new Response(null, { status: 416, headers: { 'content-range': `bytes */${size}` } }); const start = Number(match[1]), end = match[2] ? Math.min(Number(match[2]), size - 1) : size - 1; if (start > end || start >= size) return new Response(null, { status: 416, headers: { 'content-range': `bytes */${size}` } }); return new Response(bytes.subarray(start, end + 1) as any, { status: 206, headers: { ...headers, 'content-range': `bytes ${start}-${end}/${size}`, 'content-length': String(end - start + 1) } }) }
-        if (url.searchParams.get('download') === '1') headers['content-disposition'] = `attachment; filename="${this.engine}-${id}.${kind === 'mp4' ? 'mp4' : file.split('.').at(-1)}"`
-        return new Response(bytes as any, { headers: { ...headers, 'content-length': String(size) } })
+        const handle = await open(file, 'r')
+        let streaming = false
+        try {
+          const info = await handle.stat(), size = info.size
+          if (!info.isFile()) throw new Error('下载目标不是普通文件。')
+          if (size > 200 * 1024 * 1024) throw new Error('成品过大，请从本地工程目录取回。')
+          const range = request.headers.get('range'), headers: Record<string, string> = { 'content-type': type, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'accept-ranges': 'bytes' }
+          if (url.searchParams.get('download') === '1') headers['content-disposition'] = `attachment; filename="${this.engine}-${id}.${kind === 'mp4' ? 'mp4' : file.split('.').at(-1)}"`
+          let start = 0, end = size - 1
+          if (range) {
+            const match = /^bytes=(\d*)-(\d*)$/.exec(range)
+            const invalid = () => new Response(null, { status: 416, headers: { ...headers, 'content-range': `bytes */${size}` } })
+            if (!match || (!match[1] && !match[2]) || !size) return invalid()
+            const first = Number(match[1]), last = Number(match[2])
+            if (!Number.isSafeInteger(first) || !Number.isSafeInteger(last)) return invalid()
+            if (!match[1]) { if (!last) return invalid(); start = Math.max(0, size - last) }
+            else { start = first; if (match[2]) end = Math.min(last, end) }
+            if (start > end || start >= size) return invalid()
+            headers['content-range'] = `bytes ${start}-${end}/${size}`
+          }
+          headers['content-length'] = String(size ? end - start + 1 : 0)
+          if (!size) return new Response(null, { headers })
+          // The stream owns the handle and closes it on completion, abort or cancel.
+          const body = Readable.toWeb(handle.createReadStream({ start, end, highWaterMark: 64 * 1024, signal: request.signal }), { strategy: { highWaterMark: 64 * 1024, size: chunk => chunk.byteLength } })
+          const response = new Response(body as any, { status: range ? 206 : 200, headers })
+          streaming = true
+          return response
+        } finally { if (!streaming) await handle.close() }
       }
       if (request.method !== 'POST') return new Response(null, { status: 405 })
       let value: unknown
