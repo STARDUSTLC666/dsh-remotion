@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { mkdir, readFile, writeFile, rename, readdir, stat, lstat, unlink, realpath } from 'node:fs/promises'
+import { mkdir, readFile, writeFile, rename, readdir, stat, lstat, unlink, realpath, rmdir } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join, resolve, relative, isAbsolute, extname } from 'node:path'
 import lockfile from 'proper-lockfile'
@@ -72,7 +72,14 @@ export class MediaStore {
     try {
       if ((await this.list()).length >= 30) throw new Error('工作台最多保存 30 个当前项目，请先归档现有工程。')
       const p: MediaProject = { ...validateFields(value), id: randomUUID(), revision: 1, updated: new Date().toISOString(), assets: [], renders: [] }
-      await mkdir(join(this.root, 'projects', p.id), { mode: 0o700 }); await this.write(p); return p
+      const dir = join(this.root, 'projects', p.id)
+      await mkdir(dir, { mode: 0o700 })
+      try { await this.write(p); return p }
+      catch (error) {
+        // Remove only this empty newly created directory. Preserve any written data.
+        await rmdir(dir).catch(() => {})
+        throw error
+      }
     } finally { await unlock() }
   }
   async edit(id: string, revision: unknown, fn: (p: MediaProject) => Promise<void> | void, bump = true): Promise<MediaProject> {
@@ -117,6 +124,8 @@ export class MediaStore {
       if (p.assets.length >= 12 || p.assets.reduce((n, a) => n + a.bytes, 0) + bytes.length > 40 * 1024 * 1024) throw new Error('每个项目最多 12 个素材、合计 40 MB。')
       if (kind !== 'image' && p.assets.some(a => a.kind === kind)) throw new Error(kind === 'audio' ? '已有背景音频，请先移除再替换。' : '已有背景视频，请先移除再替换。')
       const assetId = randomUUID(), dir = join(await this.path(id), 'assets'); await mkdir(dir, { recursive: true })
+      if ((await lstat(dir)).isSymbolicLink()) throw new Error('素材目录不能是符号链接或目录联接。')
+      await this.checkPath(dir)
       const asset = { id: assetId, name: name.replace(/[\x00-\x1f/\\]/g, '_').slice(0, 100), file: assetId + suffix, kind, bytes: bytes.length }
       await writeFile(join(dir, asset.file), bytes, { flag: 'wx', mode: 0o600 }); p.assets.push(asset)
     })

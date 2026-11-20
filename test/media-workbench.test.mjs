@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtemp, mkdir, writeFile, readFile, stat, rm, symlink } from 'node:fs/promises'
+import { mkdtemp, mkdir, writeFile, readFile, stat, rm, symlink, readdir } from 'node:fs/promises'
 import { join, resolve, dirname, relative, isAbsolute } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { unzipSync } from 'fflate'
@@ -80,6 +80,15 @@ test('bad and oversized fields fail before creating projects; damaged records ar
   const p = await store.create(fields), path = join(await store.path(p.id), 'project.json'); await writeFile(path, '{bad')
   await assert.rejects(store.get(p.id)); assert.equal(await readFile(path, 'utf8'), '{bad')
 })
+test('a failed initial project save cannot leave an empty directory that blocks the project list', async t => {
+  const {root, store} = await fixture(t), original = store.write
+  store.write = async () => { throw Object.assign(new Error('fixture storage full'), {code:'ENOSPC'}) }
+  await assert.rejects(store.create(fields), /storage full/)
+  assert.deepEqual(await readdir(join(root, 'projects')), [])
+  store.write = original
+  const project = await store.create(fields)
+  assert.equal((await store.list())[0].id, project.id)
+})
 test('uploads validate content, enforce one music/video, and never use supplied paths', async t => {
   const { store } = await fixture(t), p = await store.create(fields)
   await assert.rejects(store.upload(p.id, p.revision, 'page.png', Buffer.from('<html>')), /PNG/)
@@ -95,6 +104,16 @@ test('managed upload removal unlinks its own reference without deleting a symlin
   const file = join(await store.path(p.id), 'assets', updated.assets[0].file), original = join(root, 'original.png'); await writeFile(original, png); await rm(file)
   try { await symlink(original, file) } catch (e) { if (e.code === 'EPERM') { t.skip('Windows file symlink creation is unavailable'); return } throw e }
   await store.removeAsset(p.id, updated.revision, updated.assets[0].id); assert.deepEqual(await readFile(original), png)
+})
+test('an assets junction cannot redirect an upload into another project directory', async t => {
+  const { store } = await fixture(t), project = await store.create(fields), other = await store.create(fields)
+  const dir = await store.path(project.id), otherDir = await store.path(other.id)
+  // The target is inside the plugin root: confinement must also protect project ownership.
+  await symlink(otherDir, join(dir, 'assets'), process.platform === 'win32' ? 'junction' : 'dir')
+  await assert.rejects(store.upload(project.id, project.revision, 'fixture.png', png), /链接|目录|素材/)
+  assert.equal((await store.get(project.id)).assets.length, 0)
+  const entries = await readdir(otherDir)
+  assert.deepEqual(entries, ['project.json'])
 })
 test('snapshots preserve exact assets while later edits leave prior output visibly stale', async t => {
   const { store } = await fixture(t), p = await store.create(fields), uploaded = await store.upload(p.id, p.revision, 'hero.png', png)
