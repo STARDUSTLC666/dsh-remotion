@@ -29,10 +29,10 @@ test('inject 声明 skills', () => {
   assert.deepEqual(inject, ['skills', 'tools'])
 })
 
-test('apply 注册 12 个技能且字段完整', () => {
+test('apply 注册 13 个技能且字段完整', () => {
   const { ctx, registered } = makeFakeCtx()
   apply(ctx)
-  assert.equal(registered.length, 12)
+  assert.equal(registered.length, 13)
   const names = registered.map((s) => s.name).sort()
   assert.deepEqual(names, [...SKILL_NAMES].sort())
   for (const skill of registered) {
@@ -47,7 +47,7 @@ test('apply 注册 12 个技能且字段完整', () => {
 test('dispose 卸载全部技能', () => {
   const { ctx, registered, listeners } = makeFakeCtx()
   apply(ctx)
-  assert.equal(registered.length, 12)
+  assert.equal(registered.length, 13)
   for (const listener of listeners.dispose ?? []) listener()
   assert.equal(registered.length, 0)
 })

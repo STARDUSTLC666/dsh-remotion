@@ -16,7 +16,7 @@ Feedback and contributions are welcome: report [issues](https://github.com/STARD
 
 Open the workbench from the native DSH sidebar. See the [workbench guide](WORKBENCH.md) for configuration and operating boundaries.
 
-Bundled skills: official Remotion 4.0.539, twelve skills and their reference resources.
+Bundled skills: official Remotion 4.0.545, thirteen skills and their reference resources, including license navigation.
 
 Move images up or down in the Media tab, including with the keyboard. The order saves immediately; export again to apply it to a new MP4.
 

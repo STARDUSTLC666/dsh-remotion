@@ -1,0 +1,6 @@
+# These exact upstream Markdown resources use semantic two-space hard breaks.
+# Keep their verified bytes; source/provenance tests still detect all drift.
+skills/remotion-markup/local-fonts.md whitespace=-blank-at-eol
+skills/remotion-markup/motion-blur.md whitespace=-blank-at-eol
+skills/remotion-best-practices/remotion-markup/local-fonts.md whitespace=-blank-at-eol
+skills/remotion-best-practices/remotion-markup/motion-blur.md whitespace=-blank-at-eol

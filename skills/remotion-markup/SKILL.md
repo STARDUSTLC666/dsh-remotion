@@ -1,16 +1,23 @@
 ---
-name: remotion-markup
-description: Content, animation and effects best practices
-version: 4.0.539
+name: "remotion-markup"
+description: "Content, animation and effects best practices"
+version: "4.0.545"
 ---
 
 ## DSH package context
 
-This skill is bundled with dsh-remotion. DSH plugin management owns updates to these skill files; do not run standalone `skills add`, `skills update`, or `remotion skills` commands to replace this bundle. Project dependencies and lockfiles are separate: preserve existing projects, and only upgrade their Remotion dependencies when the user requests it, then verify the project. Run commands in the user project, never in this installed plugin directory. The official instructions below apply within these package boundaries.
+Apply this DSH section only when an ancestor package.json identifies the installed dsh-remotion package. A standalone copy without that DSH package follows the official standalone instructions below. In DSH, plugin management owns updates: do not run standalone skills add/update, remotion skills, or hyperframes skills to replace this bundle. Treat the installed plugin as read-only, preserve existing projects and lockfiles, and upgrade a user project only when requested. These DSH rules override standalone setup and launcher examples for this installed package.
 
+For DSH-managed template videos use remotion_project (list/create/get/update) and remotion_render (prepare/preview/render/job/cancel). Check readiness; explicitly prepare on first use and poll the job until done before preview/export. Use the saved project id and current revision; query/cancel with the job id. Dependency installation alone is not readiness. Never fabricate ready.json or edit the managed runtime. The workbench pins remotion 4.0.545; its local templates do not implement every advanced upstream workflow.
+
+Preparation needs Node.js 22.19+ or 24+ with npm visible to the desktop app. Homebrew commonly uses /opt/homebrew/bin (Apple Silicon) or /usr/local/bin (Intel), with npm in prefix/lib/node_modules. Linux symlinks and Windows paths with spaces are supported. A terminal PATH can differ from an already running desktop app: restart DSH after changing its launch environment and retry the saved job. Do not reinstall over this plugin, execute shell wrappers as JavaScript, or copy secrets/whole environment dumps into diagnostics.
+
+For advanced user-owned React projects, follow their existing package manager and installed Remotion version in the project directory. The managed runtime is separate: do not change it to match another project. Export/render only when the user requests the resulting video.
 
 This is guidance for writing Remotion React Markup.
-If this is not relevant, load Remotion Best Practices instead.
+If this is not relevant, load Remotion Best Practices (`remotion-best-practices` skill) instead.
+
+`MUST` marks requirements, `SHOULD` recommendations, `MAY` optional actions, and `CAN` capabilities. Apply them to the requested task.
 
 ## Preserve user changes
 
@@ -40,11 +47,11 @@ Tailwind animation class will not render correctly, they need to be refactored.
 Use `Easing.bezier()` and `Easing.spring()` to customize timing.
 
 Before choosing the markup hierarchy, read
-editable timeline structure.
+editable timeline structure (`timeline-structure.md` in the `remotion-interactivity` skill).
 Choose editing units first, then the tracks or shared timing boundaries they
 need. It includes a complete example with interactive components and their
 registrations. For source-editable styles, schemas, and keyframes, see
-Remotion Interactivity.
+Remotion Interactivity (`remotion-interactivity` skill).
 
 ```tsx
 import { useCurrentFrame, useVideoConfig, Easing, interpolate, Interactive } from "remotion";
@@ -161,10 +168,6 @@ needs its own editable timeline, or when handling a Studio pre-compose request.
 It covers extraction, registration, inherited styles, and verification in both
 the parent and standalone views.
 
-## Voiceover
-
-See [voiceover.md](voiceover.md) for adding an AI-generated voiceover to Remotion compositions using ElevenLabs TTS.
-
 ## Embedding Videos
 
 See [embedding-videos.md](embedding-videos.md) for advanced knowledge about embedding videos - trimming, volume, speed, looping, pitch.
@@ -177,13 +180,19 @@ See [audio.md](audio.md) for advanced audio features like trimming, volume, spee
 
 See [cropping.md](cropping.md) if needing to crop the visible rectangle of a component.
 
+## Video matting
+
+For background removal, text behind a subject, background blur or replacement,
+and effects applied only to a subject, read [video-matting.md](video-matting.md).
+Generate reusable foreground layers with `@remotion/video-matting` before composing them.
+
 ## Transitions
 
 See [transitions.md](transitions.md) for scene transition patterns.
 
 ## Motion blur
 
-When adding motion blur or a movement trail, read [motion-blur.md](motion-blur.md) for the preferred HTML-in-canvas approach, preview requirements, and alternatives.
+When adding motion blur or a movement trail, read [motion-blur.md](motion-blur.md) for `<HtmlInCanvasMotionBlur>`, transition `motionBlur`, Studio controls, and preview requirements.
 
 ## Visual and pixel effects
 
@@ -251,7 +260,7 @@ For static maps, animated routes and markers, geographic explainers, Mapbox, Map
 
 ## Captions
 
-When dealing with captions or subtitles, load the Remotion Captions skill for more information.
+When dealing with captions or subtitles, load the Remotion Captions (`remotion-captions` skill) skill for more information.
 
 ## Arabic and right-to-left text
 
@@ -325,9 +334,7 @@ This goes for `@remotion/*` packages, `mediabunny`, `@mediabunny/*`, `zod`, and 
 
 ## Visual checks
 
-Open the Remotion Studio to check visual changes.
-When changing timeline structure, inspect the full composition as well as any
-connected components; verify the visible layers, cut timing, and synchronized
-content.
-
-You can also use Rendering to inspect one or several frames as images.
+Visual changes CAN be inspected in Remotion Studio (`remotion-studio` skill)
+or rendered frames (`remotion-render` skill). Comparisons CAN include visible
+layers, cut timing, and synchronized content across the full composition and
+connected components.

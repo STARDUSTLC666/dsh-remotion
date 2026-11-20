@@ -78,3 +78,7 @@ dsh plugin --profile desktop add dsh-remotion
 [MIT](https://github.com/STARDUSTLC666/dsh-remotion/blob/master/LICENSE)
 
 <a id="依赖与配置"></a>
+
+## 技能与环境版本
+
+内置技能与受管理渲染器固定为 4.0.545；13 个官方技能均注册，包含许可证导航。技能通过 DSH 插件更新，已有用户工程及其依赖不会随插件更新被改写。首次显式准备环境后轮询任务，确认真正就绪。桌面已安装 Node/npm 仍报缺失时，检查其启动 PATH；Homebrew ARM 常用 /opt/homebrew/bin，Intel 常用 /usr/local/bin，修改后重启 DSH 再重试。详见[使用说明](docs/USAGE.md)和[技能同步](docs/SKILL-SYNC.md)。

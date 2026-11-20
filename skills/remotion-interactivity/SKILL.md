@@ -1,13 +1,22 @@
 ---
-name: remotion-interactivity
-description: Structure Remotion markup for interactivity
-version: 4.0.539
+name: "remotion-interactivity"
+description: "Structures Remotion markup so layers, timing and styles are editable in Remotion Studio. Use when writing a new composition or restructuring existing markup."
+version: "4.0.545"
 ---
 
 ## DSH package context
 
-This skill is bundled with dsh-remotion. DSH plugin management owns updates to these skill files; do not run standalone `skills add`, `skills update`, or `remotion skills` commands to replace this bundle. Project dependencies and lockfiles are separate: preserve existing projects, and only upgrade their Remotion dependencies when the user requests it, then verify the project. Run commands in the user project, never in this installed plugin directory. The official instructions below apply within these package boundaries.
+Apply this DSH section only when an ancestor package.json identifies the installed dsh-remotion package. A standalone copy without that DSH package follows the official standalone instructions below. In DSH, plugin management owns updates: do not run standalone skills add/update, remotion skills, or hyperframes skills to replace this bundle. Treat the installed plugin as read-only, preserve existing projects and lockfiles, and upgrade a user project only when requested. These DSH rules override standalone setup and launcher examples for this installed package.
 
+For DSH-managed template videos use remotion_project (list/create/get/update) and remotion_render (prepare/preview/render/job/cancel). Check readiness; explicitly prepare on first use and poll the job until done before preview/export. Use the saved project id and current revision; query/cancel with the job id. Dependency installation alone is not readiness. Never fabricate ready.json or edit the managed runtime. The workbench pins remotion 4.0.545; its local templates do not implement every advanced upstream workflow.
+
+Preparation needs Node.js 22.19+ or 24+ with npm visible to the desktop app. Homebrew commonly uses /opt/homebrew/bin (Apple Silicon) or /usr/local/bin (Intel), with npm in prefix/lib/node_modules. Linux symlinks and Windows paths with spaces are supported. A terminal PATH can differ from an already running desktop app: restart DSH after changing its launch environment and retry the saved job. Do not reinstall over this plugin, execute shell wrappers as JavaScript, or copy secrets/whole environment dumps into diagnostics.
+
+For advanced user-owned React projects, follow their existing package manager and installed Remotion version in the project directory. The managed runtime is separate: do not change it to match another project. Export/render only when the user requests the resulting video.
+
+Make markup editable in Studio by default. Keep a part programmatic only if it is
+generated from external data or computed per frame, and tell the user it won't be
+editable. Text you write yourself is not external data.
 
 Studio edits the JSX nodes that create timeline items. Structure the code around
 what the user should be able to select, move, trim, or style independently.
@@ -17,9 +26,9 @@ Before writing a scene or refactoring its layers, read
 [editable timeline structure](timeline-structure.md). It covers editing units,
 tracks, shared timing, plain layout containers, and a complete component-to-root
 example. For a timeline built from footage, also read
-editable video timelines.
+editable video timelines (`video-editing.md` in the `remotion-markup` skill).
 
-Use connected compositions when
+Use connected compositions (`connected-compositions.md` in the `remotion-markup` skill) when
 a scene or reusable group needs its own timeline. Validate both its standalone
 view and the full parent timeline; a connection alone does not guarantee fewer
 visible rows.
@@ -188,7 +197,6 @@ const {fps, durationInFrames} = useVideoConfig();
       ['0px 0px', '0px 120px'],
       {
         easing: Easing.spring({damping: 200}),
-        output: 'perceptual-scale',
         extrapolateLeft: 'clamp',
         extrapolateRight: 'clamp'
       }
@@ -217,7 +225,10 @@ Use `<Interactive.Path>` from `remotion` instead of `<path>` inside an SVG to ma
 Install `@remotion/paths` for path interpolation and Studio path keyframes:
 
 ```sh
-bunx remotion add @remotion/paths
+npx remotion add @remotion/paths # If project uses npm
+bunx remotion add @remotion/paths # If project uses bun
+yarn remotion add @remotion/paths # If project uses yarn
+pnpm exec remotion add @remotion/paths # If project uses pnpm
 ```
 
 If the geometry is meant to be static, put the path string directly in the `d` prop. Do not extract it into a constant.
@@ -288,11 +299,14 @@ When scaffolding a composition, use a JSX string literal for `id`, keep `width`,
 The Props editor can save visual edits back to your code when `defaultProps` is an inline object literal on `<Composition>` or `<Still>`.
 
 ```tsx
+import {Composition, type CalculateMetadataFunction} from 'remotion';
+import {MyComponent, type Props} from './MyComponent';
+
 // 👍 Static values are in <Composition>, dynamic values are in calculateMetadata()
-const calculateMetadata = useMemo(async () => {
+const calculateMetadata: CalculateMetadataFunction<Props> = async () => {
   const dimensions = await getDimensions(); // just an example
   return {width: dimensions.width, height: dimensions.height};
-});
+};
 
 <Composition
   id="my-video"
@@ -306,10 +320,10 @@ const calculateMetadata = useMemo(async () => {
 
 ```tsx title="Negative examples"
 const defaultProps = {title: 'Hello', color: '#0b84ff'}; // ❌ Don't extract defaultProps, must be inline
-const calculateMetadata = useMemo(() => {
+const calculateMetadata: CalculateMetadataFunction<Props> = () => {
   // ❌ Unnecessary because no calculation is being done,
   return {durationInFrames: 150, fps: 30, width: 1920, height: 1080};
-});
+};
 
 <Composition
   id="my-video"
@@ -334,4 +348,4 @@ To make a custom userland component interactive, use:
 
 ## Video editing
 
-If a Remotion component mainly consists of video and audio clips, see Video editing for best practices on how to structure Remotion markup so the clips are interactively editable in the timeline.
+If a Remotion component mainly consists of video and audio clips, see Video editing (`video-editing.md` in the `remotion-markup` skill) for best practices on how to structure Remotion markup so the clips are interactively editable in the timeline.

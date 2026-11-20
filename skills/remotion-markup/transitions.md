@@ -27,7 +27,7 @@ bunx remotion add @remotion/transitions
 ## Transition example
 
 Use the connected `Chapter` scene from the
-composition example.
+composition example (`timeline-structure.md` in the `remotion-interactivity` skill).
 
 ```tsx title="TransitionVideo.tsx"
 import {TransitionSeries, linearTiming} from '@remotion/transitions';
@@ -184,6 +184,11 @@ export const MixedVideo = () => (
 
 - `presentation` — the visual effect (e.g. `fade()`, `slide()`, `wipe()`).
 - `timing` — controls speed and easing (e.g. `linearTiming()`, `springTiming()`).
+
+## Motion blur
+
+`<TransitionSeries.Transition>` CAN blur presentation movement with `motionBlur={{shutterAngle: 180, samples: 16}}`.
+All built-in presentations support it. For a complete example, custom presentation requirements, scene sampling, and CSS style restrictions, read [motion-blur.md](motion-blur.md#motion-blur-on-transitions).
 
 ## Overlay props
 

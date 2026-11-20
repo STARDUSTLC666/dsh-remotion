@@ -28,7 +28,7 @@ Open Settings → Remotion in DSH Web or Desktop.
 
 1. Create a video. Select title card, product card or slideshow; set title/body, canvas and 3–30 seconds, then save.
 2. Upload local PNG/JPEG copies, one MP3/WAV background audio and one muted MP4 background video. Limits: 20 MB each, 40 MB total. Slideshow follows upload order and needs at least two seconds per image.
-3. Explicitly prepare the environment. It downloads official CLI 4.0.539; installed Chrome is reused, with a browser download only when needed. You can continue editing during preparation. Check the [official Remotion license](https://www.remotion.dev/license) for your use case.
+3. Explicitly prepare the environment. It downloads official CLI 4.0.545; installed Chrome is reused, with a browser download only when needed. You can continue editing during preparation. Check the [official Remotion license](https://www.remotion.dev/license) for your use case.
 4. Start official Studio and inspect the picture. Stop this preview before editing or exporting; no window opens automatically.
 5. Review the pre-export check (title, canvas and duration, media count, saved revision, renderer, which revision the last MP4 used), then play and download the MP4 in the workbench. Later edits preserve earlier MP4s and display a revision warning. Export again for a new final output.
 
@@ -42,7 +42,7 @@ This is template editing, without a full timeline, transcription, TTS or cloud r
 
 ## Contents
 
-- **remotion-best-practices** (router hub) + 11 domain skills (captions/create/docs/interactivity/maps/markup/multimedia/render/saas/studio/upgrade), synced from official Remotion v4.0.539
+- **remotion-best-practices** (router hub) + 12 domain skills (captions/create/docs/interactivity/license/maps/markup/multimedia/render/saas/studio/upgrade), synced from official Remotion v4.0.545
 
 ## Requirements
 
@@ -50,7 +50,7 @@ Node.js `^22.19.0 || >=24.0.0` + npx (npm registry); rendering needs ffmpeg (gui
 
 ## Porting notes
 
-Synced from official `remotion-dev/skills` v4.0.539 commit `30d4553ecd46fbc5212fd0ff006ae43af522158b` (2026-10-27). All twelve skills and embedded references are updated. Frontmatter and a short DSH package context are adapted so DSH owns bundled skill updates and existing project dependencies remain separate. `scripts/sync-skills.mjs --check` validates the port; resource hashes are recorded in `skills/UPSTREAM.json`.
+Pinned to official `remotion-dev/skills` commit `6f55706d1069e512430582ad86e4e57dc07afe1b`; its package and frontmatter are version 4.0.545, paired with the official npm runtime 4.0.545 (verified November 21, 2026). All thirteen skills, including `remotion-license`, are registered. Documented DSH frontmatter/context adaptations preserve managed workflow and project boundaries. Per-file origins and adapted hashes are recorded in `skills/UPSTREAM.json`; see [skill synchronization](SKILL-SYNC.md) for the required pinned input and read-only check.
 
 ## Multi-harness
 
@@ -87,7 +87,7 @@ node --test "test/*.test.mjs"
 When developing the sibling repositories together, edit the shared module and regression tests in HyperFrames, then synchronize:
 
 ```bash
-# Run in dsh-hyperframes; updates only three shared files in sibling dsh-remotion
+# Run in dsh-hyperframes; updates the explicit shared-file list in sibling dsh-remotion
 node scripts/sync-skill-bundle.mjs
 node scripts/sync-skill-bundle.mjs --check
 ```

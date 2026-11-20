@@ -28,7 +28,7 @@ dsh plugin --profile web remove dsh-remotion
 
 1. 新建视频，选择标题卡、产品介绍或图文轮播，填写标题/正文、画幅和 3–30 秒时长，明确保存。
 2. 上传 PNG/JPEG、一个背景音频（MP3/WAV）、一个静音背景视频（MP4）的副本。每个文件最多 20 MB、总计 40 MB；轮播按上传顺序，每张至少两秒。
-3. 首次点击「准备渲染环境」。此时下载固定版本官方 CLI 4.0.539，优先使用已安装的 Chrome，没有时再下载浏览器；可以继续编辑工程。下载失败保留工程，查看运行记录后重试。使用前确认 [Remotion 官方许可证](https://www.remotion.dev/license)适合你的用途。
+3. 首次点击「准备渲染环境」。此时下载固定版本官方 CLI 4.0.545，优先使用已安装的 Chrome，没有时再下载浏览器；可以继续编辑工程。下载失败保留工程，查看运行记录后重试。使用前确认 [Remotion 官方许可证](https://www.remotion.dev/license)适合你的用途。
 4. 启动官方 Studio，检查画面。停止本次预览后再编辑或导出；不会自动打开或占用前台窗口。
 5. 导出 MP4 前先看导出前检查（标题、画幅与时长、素材数、已保存修订、渲染环境、上一份成品对应哪次修订），确认后在工作台播放并下载。工程更新后保留旧成品并显示旧修订提醒；再次导出即可生成新成片。
 
@@ -46,7 +46,7 @@ dsh plugin --profile web remove dsh-remotion
 
 ## 技能内容
 
-- **remotion-best-practices**（总纲路由）+ 11 个领域技能（captions/create/docs/interactivity/maps/markup/multimedia/render/saas/studio/upgrade），同步自 Remotion 官方 v4.0.539
+- **remotion-best-practices**（总纲路由）+ 12 个领域技能（captions/create/docs/interactivity/maps/markup/multimedia/render/saas/studio/upgrade/license），同步自 Remotion 官方 v4.0.545
 
 ## 依赖
 
@@ -54,7 +54,7 @@ Node.js `^22.19.0 || >=24.0.0` + npx（npm registry）；渲染需 ffmpeg（Remo
 
 ## 移植说明
 
-技能同步自官方 `remotion-dev/skills` 的 v4.0.539 提交 `30d4553ecd46fbc5212fd0ff006ae43af522158b`（2026-10-27）。12 个技能及内嵌引用资源同步更新；仅整理 frontmatter 并增加 DSH 包边界说明，技能文件由 DSH 插件更新管理，不执行独立技能更新命令去改其他安装。`scripts/sync-skills.mjs --check` 可核对移植正文，`skills/UPSTREAM.json` 记录资源摘要。
+技能同步自官方 `remotion-dev/skills` 固定提交 `6f55706d1069e512430582ad86e4e57dc07afe1b`，其 package 与技能版本为 4.0.545（2026-11-21 核验），配对官方 npm 渲染器 4.0.545。13 个技能包含新增的 `remotion-license`。仅作有记录的 frontmatter、DSH 受管理工程流程与环境排错适配；原文资源、来源与适配后摘要见 `skills/UPSTREAM.json`。更新由 DSH 插件管理，不在用户任务里执行独立技能更新。同步输入、原子替换及只读检查见 [技能同步](SKILL-SYNC.md)。
 
 ## 跨平台使用
 
@@ -91,7 +91,7 @@ node --test "test/*.test.mjs"
 两个仓库并列开发时，在 HyperFrames 修改公共模块与公共回归测试，再同步：
 
 ```bash
-# 在 dsh-hyperframes 中执行；只更新相邻 dsh-remotion 的三个公共文件
+# 在 dsh-hyperframes 中执行；按显式清单更新相邻 dsh-remotion 的共享文件
 node scripts/sync-skill-bundle.mjs
 node scripts/sync-skill-bundle.mjs --check
 ```
