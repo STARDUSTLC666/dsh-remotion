@@ -11,7 +11,7 @@ export class MediaError extends Error {
     super(message)
   }
 }
-export const MEDIA_VERSIONS = { hyperframes: '0.9.72', remotion: '4.0.545', gsap: '3.15.0' } as const
+export const MEDIA_VERSIONS = { hyperframes: '0.9.77', remotion: '4.0.545', gsap: '3.15.0' } as const
 export const MEDIA_TEMPLATES = [
   { id: 'title', zh: '标题卡', en: 'Title card', description: '一句标题、一段介绍，适合开场与通知。' },
   { id: 'product', zh: '产品介绍', en: 'Product card', description: '深色画布与一张主图，适合产品亮点。' },

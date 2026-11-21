@@ -32,7 +32,7 @@ export declare class MediaError extends Error {
     constructor(message: string, code: string, status?: number);
 }
 export declare const MEDIA_VERSIONS: {
-    readonly hyperframes: "0.9.72";
+    readonly hyperframes: "0.9.77";
     readonly remotion: "4.0.545";
     readonly gsap: "3.15.0";
 };

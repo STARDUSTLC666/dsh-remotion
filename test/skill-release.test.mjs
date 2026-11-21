@@ -38,7 +38,7 @@ test('provenance distinguishes immutable upstream bytes from documented DSH adap
   }
   if(engine==='hyperframes'){
     const origins=Object.values(provenance.sourceFiles)
-    assert.equal(origins.filter(item=>item.kind==='npm').length,238)
+    assert.equal(origins.filter(item=>item.kind==='npm').length,239)
     assert.equal(origins.filter(item=>item.kind==='git').length,101)
   }
 })
