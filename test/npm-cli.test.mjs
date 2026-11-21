@@ -56,3 +56,14 @@ test('missing, unreadable and directory candidates fail with useful guidance and
   assert.throws(f.resolve,error=>/PATH/.test(error.message)&&!/path-secret|model-secret|fixture-secret|\/private/.test(error.message))
   assert.equal(JSON.stringify(env),before)
 })
+for(const prefix of ['/opt/homebrew','/usr/local']) test('macOS Desktop with minimal GUI PATH still discovers Homebrew npm at '+prefix,()=>{
+  const npm=prefix+'/lib/node_modules/npm/bin/npm-cli.js'
+  const f=fixture({platform:'darwin',env:{PATH:'/usr/bin:/bin'},files:[npm]})
+  assert.equal(f.resolve(),npm)
+})
+test('Windows discovers npm via NVM_SYMLINK or ProgramFiles\\nodejs when missing from PATH',()=>{
+  const nvmNpm='C:\\Program Files\\nodejs-nvm\\node_modules\\npm\\bin\\npm-cli.js'
+  assert.equal(fixture({platform:'win32',execPath:'C:\\Apps\\DSH.exe',env:{PATH:'C:\\Windows\\System32',NVM_SYMLINK:'C:\\Program Files\\nodejs-nvm'},files:[nvmNpm]}).resolve(),nvmNpm)
+  const pfNpm='C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js'
+  assert.equal(fixture({platform:'win32',execPath:'C:\\Apps\\DSH.exe',env:{PATH:'C:\\Windows\\System32',ProgramFiles:'C:\\Program Files'},files:[pfNpm]}).resolve(),pfNpm)
+})

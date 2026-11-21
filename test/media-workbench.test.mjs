@@ -341,3 +341,98 @@ test('an explicit browser skips ensure, checks both media binaries and persists 
   delete stamp.prerequisites;await writeFile(join(w.runtime,'ready.json'),JSON.stringify(stamp));
   assert.equal((await w.environment()).ready,false,'legacy ready stamps do not prove ffprobe availability');
 });
+
+test('runs cleanup prunes intermediates on success, evicts 6th render directory, and deletes failed/cancelled run dirs', async t => {
+  const { store, workbench: w } = await fixture(t), p = await store.create(fields)
+  const uploaded = await store.upload(p.id, p.revision, 'slide.png', png)
+  await fakeRuntime(w, `const fs=require('node:fs');const b=Buffer.alloc(256);b.write('ftyp',4);fs.writeFileSync('final.mp4',b);`)
+  const ids = []
+  for (let i = 0; i < 6; i++) {
+    const job = await w.start('render', uploaded.id, uploaded.revision)
+    const end = await finished(w, job.id)
+    assert.equal(end.state, 'done')
+    ids.push(end.output)
+  }
+  const projectDir = await store.path(uploaded.id)
+  // Latest kept render retains final.mp4 but removes duplicated public/assets and node_modules
+  const latestDir = join(projectDir, 'runs', ids[5])
+  assert.equal((await stat(join(latestDir, 'final.mp4'))).isFile(), true)
+  await assert.rejects(stat(join(latestDir, 'public')), /ENOENT/)
+  await assert.rejects(stat(join(latestDir, 'node_modules')), /ENOENT/)
+  // Evicted oldest (1st of 6) render directory is removed from disk
+  await assert.rejects(stat(join(projectDir, 'runs', ids[0])), /ENOENT/)
+  // Failed render cleans up its temporary run directory
+  await fakeRuntime(w, `process.exit(1)`)
+  const failedJob = await w.start('render', uploaded.id, uploaded.revision)
+  const failedEnd = await finished(w, failedJob.id)
+  assert.equal(failedEnd.state, 'failed')
+  await assert.rejects(stat(join(projectDir, 'runs', failedJob.id)), /ENOENT/)
+})
+
+test('corrupted project records and non-UUID folders do not block list() or create(), and list reports corruptedCount', async t => {
+  const { store, workbench: w, root } = await fixture(t)
+  const healthy = await store.create(fields)
+  const broken = await store.create({ ...fields, title: '将损坏工程' })
+  await writeFile(join(await store.path(broken.id), 'project.json'), '{broken')
+  await mkdir(join(root, 'projects', '------------------------------------'), { recursive: true })
+  const listed = await store.list()
+  assert.deepEqual(listed.map(p => p.id), [healthy.id])
+  const res = await request(w, { action: 'list' })
+  assert.equal(res.status, 200)
+  const body = await res.json()
+  assert.equal(body.value.projects.length, 1)
+  assert.equal(body.value.corruptedCount, 1)
+  const created = await store.create({ ...fields, title: '继续新建' })
+  assert.equal((await store.list()).length, 2)
+  assert.ok((await store.list()).some(p => p.id === created.id))
+})
+
+test('upload supports WebP/M4A magic bytes and rolls back orphan asset file if metadata write fails', async t => {
+  const { store } = await fixture(t), p = await store.create(fields)
+  const webp = Buffer.alloc(16); webp.write('RIFF', 0); webp.write('WEBP', 8)
+  const m4a = Buffer.alloc(16); m4a.write('ftyp', 4)
+  const withWebp = await store.upload(p.id, p.revision, 'cover.webp', webp)
+  assert.match(withWebp.assets[0].file, /\.webp$/)
+  const withM4a = await store.upload(p.id, withWebp.revision, 'bgm.m4a', m4a)
+  assert.match(withM4a.assets[1].file, /\.m4a$/)
+  const assetsDir = join(await store.path(p.id), 'assets')
+  const before = (await readdir(assetsDir)).sort()
+  const originalWrite = store.write
+  store.write = async () => { throw new Error('disk full') }
+  await assert.rejects(store.upload(p.id, withM4a.revision, 'orphan.png', png), /disk full/)
+  store.write = originalWrite
+  assert.deepEqual((await readdir(assetsDir)).sort(), before, 'failed upload metadata write must remove orphan file')
+})
+
+test('run() line-buffers chunked UTF-8 stdout, ignores trailing stderr in browserPath capture, and separates timeout from user cancel', async t => {
+  const { root, workbench: w } = await fixture(t)
+  const job = { controller: new AbortController(), view: { id: '00000000-0000-0000-0000-000000000001', kind: 'prepare', state: 'running', stage: '', lines: [] } }
+  const out = await w.run(job, process.execPath, ['-e', "process.stdout.write('__DSH_BROWSER_PATH__=/a/');setTimeout(()=>{process.stdout.write('b/chrome\\n');process.stderr.write('DeprecationWarning: noisy stderr\\n');process.stdout.write(Buffer.from('中文日志\\n').subarray(0,4));setTimeout(()=>process.stdout.write(Buffer.from('中文日志\\n').subarray(4)),15)},15)"], root, {}, { captureStdout: true })
+  assert.ok(out.split(/\r?\n/).includes('__DSH_BROWSER_PATH__=/a/b/chrome'))
+  assert.ok(job.view.lines.includes('中文日志'), 'split UTF-8 chunks reconstruct cleanly')
+  assert.equal(job.view.lines.some(l => l.includes('__DSH_BROWSER_PATH__=')), false)
+
+  const timedJob = { controller: new AbortController(), abortReason: 'timeout', view: { id: '00000000-0000-0000-0000-000000000002', kind: 'render', state: 'running', stage: '', lines: [] } }
+  const running = w.run(timedJob, process.execPath, ['-e', 'setInterval(()=>{},1000)'], root)
+  setTimeout(() => timedJob.controller.abort(), 30)
+  await assert.rejects(running, err => err.code === 'JOB_TIMEOUT' && /超时/.test(err.message))
+})
+
+test('tool output includes recent error logs on failure and output path on done; Remotion template adds CJK fallbacks & media loop', async t => {
+  const { store } = await fixture(t), p = await store.create(fields)
+  const src = projectSources(p, 'remotion')['src/index.jsx']
+  assert.match(src, /PingFang SC/)
+  assert.match(src, /Noto Sans CJK SC/)
+  assert.match(src, /OffthreadVideo loop muted/)
+  assert.match(src, /Audio loop src=/)
+  assert.throws(() => projectSources({ ...p, template: 'slideshow', duration: 3, assets: [{ id: '1', kind: 'image', file: 'a.png', name: 'a.png', bytes: 1 }, { id: '2', kind: 'image', file: 'b.png', name: 'b.png', bytes: 1 }] }, 'remotion'), err => err.code === 'SLIDESHOW_DURATION')
+
+  const tools = []
+  installMediaWorkbench({ tools: { register(tool) { tools.push(tool); return () => {} } }, on() {}, inject() {} }, 'remotion')
+  const renderTool = tools.find(tool => tool.name === 'remotion_render')
+  const failText = renderTool.output.render({}, { id: 'job-1', state: 'failed', stage: '失败', lines: ['line-1', 'Error: boom'] })[0].text
+  assert.match(failText, /Error: boom/)
+  const doneText = renderTool.output.render({}, { id: 'job-2', projectId: 'proj-1', state: 'done', stage: '已完成', output: 'job-2' })[0].text
+  assert.match(doneText, /成品编号：job-2/)
+  assert.match(doneText, /final\.mp4/)
+})

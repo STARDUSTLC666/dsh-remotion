@@ -6,6 +6,11 @@ export interface MediaProject extends MediaFields {
   id: string; revision: number; updated: string; assets: MediaAsset[]
   renders: Array<{ id: string; revision: number; bytes: number; created: string }>
 }
+export class MediaError extends Error {
+  constructor(message: string, readonly code: string, readonly status = 400) {
+    super(message)
+  }
+}
 export const MEDIA_VERSIONS = { hyperframes: '0.9.72', remotion: '4.0.545', gsap: '3.15.0' } as const
 export const MEDIA_TEMPLATES = [
   { id: 'title', zh: '标题卡', en: 'Title card', description: '一句标题、一段介绍，适合开场与通知。' },
@@ -13,14 +18,16 @@ export const MEDIA_TEMPLATES = [
   { id: 'slideshow', zh: '图文轮播', en: 'Slideshow', description: '上传的图片依次展示，正文每行对应一页。' },
 ] as const
 export const MEDIA_FORMATS: Record<string, [number, number]> = { landscape: [1280, 720], portrait: [720, 1280], square: [720, 720] }
+const CJK_FONT_STACK = 'system-ui,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif'
+
 export function validateFields(value: unknown): MediaFields {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('请填写项目内容。')
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new MediaError('请填写项目内容。', 'FIELDS_REQUIRED')
   const v = value as Record<string, unknown>
-  if (!MEDIA_TEMPLATES.some(row => row.id === v.template)) throw new Error('请选择支持的模板。')
-  if (typeof v.title !== 'string' || !v.title.trim() || v.title.length > 72) throw new Error('标题需为 1–72 个字符。')
-  if (typeof v.body !== 'string' || v.body.length > 360) throw new Error('正文最多 360 个字符。')
-  if (typeof v.format !== 'string' || !Object.hasOwn(MEDIA_FORMATS, v.format)) throw new Error('请选择支持的画幅。')
-  if (typeof v.duration !== 'number' || !Number.isInteger(v.duration) || v.duration < 3 || v.duration > 30) throw new Error('时长需为 3–30 整秒。')
+  if (!MEDIA_TEMPLATES.some(row => row.id === v.template)) throw new MediaError('请选择支持的模板。', 'TEMPLATE_INVALID')
+  if (typeof v.title !== 'string' || !v.title.trim() || v.title.length > 72) throw new MediaError('标题需为 1–72 个字符。', 'TITLE_INVALID')
+  if (typeof v.body !== 'string' || v.body.length > 360) throw new MediaError('正文最多 360 个字符。', 'BODY_TOO_LONG')
+  if (typeof v.format !== 'string' || !Object.hasOwn(MEDIA_FORMATS, v.format)) throw new MediaError('请选择支持的画幅。', 'FORMAT_INVALID')
+  if (typeof v.duration !== 'number' || !Number.isInteger(v.duration) || v.duration < 3 || v.duration > 30) throw new MediaError('时长需为 3–30 整秒。', 'DURATION_INVALID')
   return { template: v.template as string, title: v.title.trim(), body: v.body.trim(), format: v.format, duration: v.duration }
 }
 const escapeHtml = (text: string) => text.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]!))
@@ -28,7 +35,7 @@ export function projectSources(p: MediaProject, engine: MediaEngine): Record<str
   const [width, height] = MEDIA_FORMATS[p.format]
   const images = p.assets.filter(a => a.kind === 'image'), audio = p.assets.find(a => a.kind === 'audio'), video = p.assets.find(a => a.kind === 'video')
   const count = p.template === 'slideshow' ? Math.max(images.length, 1) : 1
-  if (p.duration < count * 2) throw new Error(`轮播 ${count} 张图片至少需要 ${count * 2} 秒，请增加时长。`)
+  if (p.duration < count * 2) throw new MediaError(`轮播 ${count} 张图片至少需要 ${count * 2} 秒，请增加时长。`, 'SLIDESHOW_DURATION')
   const dark = p.template === 'product', portrait = width <= height
   const copyWidth = (width - (portrait ? 96 : 128)) * (!portrait && images.length ? .51 : 1)
   const copyHeight = (height - (portrait ? 120 : 112)) * (portrait && images.length ? .55 : 1) - 36
@@ -39,10 +46,10 @@ export function projectSources(p: MediaProject, engine: MediaEngine): Record<str
   const bodies = count > 1 ? p.body.split('\n').slice(0, count) : [p.body]
   const fits = () => 42 + linesAt(p.title, titleSize) * titleSize * 1.15 + 22 + Math.max(...bodies.map(body => linesAt(body, bodySize) * bodySize * 1.6)) <= copyHeight
   while (!fits() && (bodySize > 16 || titleSize > 28)) { if (bodySize > 16) bodySize--; else titleSize-- }
-  if (!fits()) throw new Error('文字超过此画幅的可读空间。请缩短正文或分成轮播页后再导出。')
-  if (count > 1 && p.body.split('\n').length > count) throw new Error('正文行数多于轮播图片数，请增加图片或合并文字。')
-  const css = `@font-face{font-family:"Microsoft YaHei";src:local("Microsoft YaHei")}*{box-sizing:border-box}body{margin:0;font-family:system-ui,"Microsoft YaHei",sans-serif} #root{position:relative;width:${width}px;height:${height}px;overflow:hidden;background:${dark ? '#142D39' : '#FFF8ED'};color:${dark ? '#FFF8ED' : '#142D39'}} .scene{position:absolute;inset:0;padding:${portrait ? '60px 48px' : '56px 64px'};display:flex;${portrait ? 'flex-direction:column;' : ''}align-items:center;justify-content:center;gap:36px} .copy{flex:1;min-width:0;width:100%} .eyebrow{color:#F26445;font-size:18px;letter-spacing:4px;font-weight:700;margin-bottom:18px} h1{font-size:${titleSize}px;line-height:1.15;margin:0;overflow-wrap:anywhere} p{font-size:${bodySize}px;line-height:1.6;margin:22px 0 0;white-space:pre-line;overflow-wrap:anywhere} .visual{${portrait ? 'height:40%;width:100%;' : 'width:45%;height:80%;'}flex-shrink:0;object-fit:contain;border-radius:18px} .accent{position:absolute;left:0;top:0;width:14px;height:100%;background:#F26445} .page{position:absolute;right:40px;bottom:22px;font-size:18px;opacity:.65}`
-  const design = `# Design\nOriginal DSH managed templates.\n\nPaper #FFF8ED; ink #142D39; coral #F26445; mint #79CDB4. Local system-ui / Microsoft YaHei. Safe margins, wrapped text, deterministic entrances. No remote fonts, random or infinite animation.\n`
+  if (!fits()) throw new MediaError('文字超过此画幅的可读空间。请缩短正文或分成轮播页后再导出。', 'TEXT_OVERFLOW')
+  if (count > 1 && p.body.split('\n').length > count) throw new MediaError('正文行数多于轮播图片数，请增加图片或合并文字。', 'SLIDESHOW_LINES')
+  const css = `@font-face{font-family:"Microsoft YaHei";src:local("Microsoft YaHei")}*{box-sizing:border-box}body{margin:0;font-family:${CJK_FONT_STACK}} #root{position:relative;width:${width}px;height:${height}px;overflow:hidden;background:${dark ? '#142D39' : '#FFF8ED'};color:${dark ? '#FFF8ED' : '#142D39'}} .scene{position:absolute;inset:0;padding:${portrait ? '60px 48px' : '56px 64px'};display:flex;${portrait ? 'flex-direction:column;' : ''}align-items:center;justify-content:center;gap:36px} .copy{flex:1;min-width:0;width:100%} .eyebrow{color:#F26445;font-size:18px;letter-spacing:4px;font-weight:700;margin-bottom:18px} h1{font-size:${titleSize}px;line-height:1.15;margin:0;overflow-wrap:anywhere} p{font-size:${bodySize}px;line-height:1.6;margin:22px 0 0;white-space:pre-line;overflow-wrap:anywhere} .visual{${portrait ? 'height:40%;width:100%;' : 'width:45%;height:80%;'}flex-shrink:0;object-fit:contain;border-radius:18px} .accent{position:absolute;left:0;top:0;width:14px;height:100%;background:#F26445} .page{position:absolute;right:40px;bottom:22px;font-size:18px;opacity:.65}`
+  const design = `# Design\nOriginal DSH managed templates.\n\nPaper #FFF8ED; ink #142D39; coral #F26445; mint #79CDB4. Local system-ui / PingFang SC / Microsoft YaHei / Noto Sans CJK SC. Safe margins, wrapped text, deterministic entrances. No remote fonts, random or infinite animation.\n`
   const info = { ...p, width, height, fps: 24, titleSize, bodySize, dark, portrait }
   const sources: Record<string, string> = {
     'project.json': JSON.stringify(p, null, 2), 'DESIGN.md': design,
@@ -69,12 +76,12 @@ export function projectSources(p: MediaProject, engine: MediaEngine): Record<str
 import {registerRoot,Composition,AbsoluteFill,Img,Audio,OffthreadVideo,staticFile,useCurrentFrame,interpolate} from 'remotion';
 import data from '../data.json';
 function Video(){const frame=useCurrentFrame();const photos=data.assets.filter(a=>a.kind==='image'),music=data.assets.find(a=>a.kind==='audio'),video=data.assets.find(a=>a.kind==='video');const count=data.template==='slideshow'?Math.max(photos.length,1):1;const length=data.duration*24/count;const page=Math.min(count-1,Math.floor(frame/length));const local=frame-page*length;const opacity=interpolate(local,[0,12,length-10,length],[0,1,1,0],{extrapolateLeft:'clamp',extrapolateRight:'clamp'});const body=count>1?(data.body.split('\\n')[page]||''):data.body;
-return <AbsoluteFill style={{background:data.dark?'#142D39':'#FFF8ED',color:data.dark?'#FFF8ED':'#142D39',fontFamily:'system-ui,Microsoft YaHei,sans-serif'}}>
-{video&&<OffthreadVideo muted src={staticFile('assets/'+video.file)} style={{position:'absolute',width:'100%',height:'100%',objectFit:'cover',opacity:.22}}/>}
+return <AbsoluteFill style={{background:data.dark?'#142D39':'#FFF8ED',color:data.dark?'#FFF8ED':'#142D39',fontFamily:${JSON.stringify(CJK_FONT_STACK)}}}>
+{video&&<OffthreadVideo loop muted src={staticFile('assets/'+video.file)} style={{position:'absolute',width:'100%',height:'100%',objectFit:'cover',opacity:.22}}/>}
 <div style={{position:'absolute',inset:0,padding:data.portrait?'60px 48px':'56px 64px',display:'flex',flexDirection:data.portrait?'column':'row',alignItems:'center',justifyContent:'center',gap:36,opacity}}>
 <div style={{flex:1,minWidth:0,width:'100%'}}><div style={{color:'#F26445',fontSize:18,letterSpacing:4,fontWeight:700,marginBottom:18}}>{data.template.toUpperCase()}</div><h1 style={{fontSize:data.titleSize,lineHeight:1.15,margin:0,overflowWrap:'anywhere'}}>{data.title}</h1><p style={{fontSize:data.bodySize,lineHeight:1.6,marginTop:22,whiteSpace:'pre-line',overflowWrap:'anywhere'}}>{body}</p></div>
 {photos.length>0&&<Img src={staticFile('assets/'+photos[page%photos.length].file)} style={{width:data.portrait?'100%':'45%',height:data.portrait?'40%':'80%',flexShrink:0,objectFit:'contain',borderRadius:18}}/>}</div>
-<div style={{position:'absolute',left:0,top:0,width:14,height:'100%',background:'#F26445'}}/><div style={{position:'absolute',right:40,bottom:22,fontSize:18,opacity:.65}}>{page+1} / {count}</div>{music&&<Audio src={staticFile('assets/'+music.file)} volume={.4}/>}</AbsoluteFill>}
+<div style={{position:'absolute',left:0,top:0,width:14,height:'100%',background:'#F26445'}}/><div style={{position:'absolute',right:40,bottom:22,fontSize:18,opacity:.65}}>{page+1} / {count}</div>{music&&<Audio loop src={staticFile('assets/'+music.file)} volume={.4}/>}</AbsoluteFill>}
 const Root=()=> <Composition id="ManagedVideo" component={Video} durationInFrames={data.duration*24} fps={24} width={data.width} height={data.height}/>;
 registerRoot(Root);
 `

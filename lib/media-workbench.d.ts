@@ -7,6 +7,7 @@ interface MediaJob {
     revision?: number;
     state: 'running' | 'done' | 'failed' | 'cancelled';
     stage: string;
+    stageCode?: string;
     lines: string[];
     url?: string;
     output?: string;
@@ -20,6 +21,10 @@ export declare class MediaWorkbench {
     private starting;
     private disposed;
     constructor(engine: MediaEngine, root?: string);
+    private explicitBrowserEnv;
+    private setStage;
+    private safeRemoveRunDir;
+    private pruneRunWorkdir;
     private browserFile;
     environment(): Promise<{
         ready: boolean;
@@ -28,6 +33,7 @@ export declare class MediaWorkbench {
         hint: string;
     }>;
     job(id: string): MediaJob;
+    private logLine;
     private log;
     private stopChild;
     private run;

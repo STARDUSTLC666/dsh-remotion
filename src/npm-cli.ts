@@ -50,6 +50,25 @@ export function resolveNpmCli(options: NpmCliOptions = {}): string {
   }
   const appData = variable('APPDATA')
   if (appData && paths.isAbsolute(appData)) add(paths.join(appData, 'npm/node_modules/npm/bin/npm-cli.js'))
+  // Low-priority well-known install directories for desktop GUI apps launched
+  // with a minimal PATH (e.g. macOS Dock/Finder missing Homebrew prefixes).
+  if (platform === 'darwin') {
+    relativeTo('/opt/homebrew/bin')
+    relativeTo('/usr/local/bin')
+    for (const dir of ['/opt/homebrew/bin', '/usr/local/bin']) {
+      try { add(fs.realpathSync(paths.join(dir, 'npm'))) } catch { /* continue */ }
+    }
+  } else if (platform === 'win32') {
+    const nvmSymlink = variable('NVM_SYMLINK')
+    if (nvmSymlink && paths.isAbsolute(nvmSymlink)) relativeTo(nvmSymlink)
+    const programFiles = variable('ProgramFiles')
+    if (programFiles && paths.isAbsolute(programFiles)) relativeTo(paths.join(programFiles, 'nodejs'))
+  } else {
+    for (const dir of ['/usr/local/bin', '/usr/bin']) {
+      relativeTo(dir)
+      try { add(fs.realpathSync(paths.join(dir, 'npm'))) } catch { /* continue */ }
+    }
+  }
   for (const candidate of candidates) {
     if (paths.basename(candidate).toLowerCase() !== 'npm-cli.js') continue
     try {

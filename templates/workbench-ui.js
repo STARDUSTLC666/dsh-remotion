@@ -5125,7 +5125,29 @@ dialog[open]::backdrop {
 }
 `;
 
-  function Styles() { return h('style', null, styles); }
+  const DSH_STYLE_NODE_ID = 'dsh-workbench-ui-v3-styles';
+
+  function ensureStyleNode(id, cssText) {
+    if (typeof document === 'undefined' || !document.head || typeof document.getElementById !== 'function') return false;
+    let node = document.getElementById(id);
+    if (!node) {
+      node = document.createElement('style');
+      node.id = id;
+      node.textContent = cssText;
+      if (typeof document.head.appendChild === 'function') document.head.appendChild(node);
+      else if (typeof document.head.append === 'function') document.head.append(node);
+      else return false;
+    } else if (node.textContent !== cssText) {
+      node.textContent = cssText;
+    }
+    return true;
+  }
+
+  function Styles({ id = DSH_STYLE_NODE_ID, cssText = styles } = {}) {
+    const mounted = ensureStyleNode(id, cssText);
+    useLayoutHook(() => { ensureStyleNode(id, cssText); }, [id, cssText]);
+    return mounted ? null : h('style', null, cssText);
+  }
 
   return {
     Icon,

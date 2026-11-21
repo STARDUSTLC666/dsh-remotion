@@ -26,6 +26,11 @@ export interface MediaProject extends MediaFields {
         created: string;
     }>;
 }
+export declare class MediaError extends Error {
+    readonly code: string;
+    readonly status: number;
+    constructor(message: string, code: string, status?: number);
+}
 export declare const MEDIA_VERSIONS: {
     readonly hyperframes: "0.9.72";
     readonly remotion: "4.0.545";

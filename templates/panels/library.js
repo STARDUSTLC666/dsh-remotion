@@ -5,23 +5,26 @@ function ProjectLibrary({ items, scope = 'projects', language = 'zh', searchText
   const [query, setQuery] = React.useState(saved?.query || '');
   const [order, setOrder] = React.useState(saved?.order || 'updated');
   const controlId = React.useId();
-  const normalize = text => String(text ?? '').normalize('NFKC').toLocaleLowerCase(language);
-  const words = normalize(query).trim().split(/\s+/).filter(Boolean);
-  const collator = new Intl.Collator(language, { numeric: true, sensitivity: 'base' });
-  const timestamp = row => { const value = Date.parse(updatedAt(row)); return Number.isFinite(value) ? value : 0; };
-  const visible = items.filter(row => words.every(word => normalize(searchText(row)).includes(word))).sort((a, b) => {
-    const tie = collator.compare(String(a.title || ''), String(b.title || '')) || String(a.id).localeCompare(String(b.id));
-    return order === 'title' ? tie : (order === 'oldest' ? timestamp(a) - timestamp(b) : timestamp(b) - timestamp(a)) || tie;
-  });
+  const useMemoHook = typeof React.useMemo === 'function' ? React.useMemo : (fn => fn());
+  const collator = useMemoHook(() => new Intl.Collator(language, { numeric: true, sensitivity: 'base' }), [language]);
+  const visible = useMemoHook(() => {
+    const normalize = text => String(text ?? '').normalize('NFKC').toLocaleLowerCase(language);
+    const words = normalize(query).trim().split(/\s+/).filter(Boolean);
+    const timestamp = row => { const value = Date.parse(updatedAt(row)); return Number.isFinite(value) ? value : 0; };
+    return items.filter(row => words.every(word => normalize(searchText(row)).includes(word))).sort((a, b) => {
+      const tie = collator.compare(String(a.title || ''), String(b.title || '')) || String(a.id).localeCompare(String(b.id));
+      return order === 'title' ? tie : (order === 'oldest' ? timestamp(a) - timestamp(b) : timestamp(b) - timestamp(a)) || tie;
+    });
+  }, [items, query, order, language, collator]);
   function change(nextQuery, nextOrder) {
     projectLibraryPreferences.set(scope, { query: nextQuery, order: nextOrder });
     setQuery(nextQuery); setOrder(nextOrder);
   }
   return h('section', { className: 'project-library', 'aria-label': t('工程查找', 'Find projects') },
-    h('style', null, PROJECT_LIBRARY_CSS),
-    h('div', { className: 'project-library-controls' },
+    h(W.Styles, { id: 'dsh-project-library-styles', cssText: PROJECT_LIBRARY_CSS }),
+    h('search', { className: 'project-library-controls' },
       h('label', { htmlFor: controlId + '-query' }, t('搜索工程', 'Search projects'),
-        h(W.Input, { id: controlId + '-query', icon: 'search', type: 'search', value: query, placeholder: searchHint, maxLength: 200,
+        h(W.Input, { id: controlId + '-query', icon: 'search', type: 'search', value: query, placeholder: searchHint, maxLength: 200, autoCorrect: 'off', autoCapitalize: 'none', spellCheck: false,
           onChange: e => change(e.target.value, order), onKeyDown: e => { if (e.key === 'Escape' && query) { e.preventDefault(); e.stopPropagation(); change('', order); } } })),
       h('label', { htmlFor: controlId + '-order' }, t('排序', 'Sort by'),
         h('select', { id: controlId + '-order', value: order, onChange: e => change(query, e.target.value) },

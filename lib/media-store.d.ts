@@ -1,7 +1,7 @@
-import { type MediaEngine, type MediaProject, type MediaAsset } from './media-templates.js';
+import { MediaError, type MediaEngine, type MediaProject, type MediaAsset } from './media-templates.js';
 export declare function mediaId(value: unknown): string;
-export declare class MediaConflict extends Error {
-    status: number;
+export declare class MediaConflict extends MediaError {
+    constructor(message: string);
 }
 export declare class MediaStore {
     readonly root: string;
@@ -10,6 +10,13 @@ export declare class MediaStore {
     path(id: string, archived?: boolean): Promise<string>;
     checkPath(path: string): Promise<void>;
     get(id: string, archived?: boolean): Promise<MediaProject>;
+    listWithWarnings(archived?: boolean): Promise<{
+        projects: MediaProject[];
+        corrupted: Array<{
+            id: string;
+            detail: string;
+        }>;
+    }>;
     list(archived?: boolean): Promise<MediaProject[]>;
     /** Move a complete managed project without deleting sources, assets or renders. */
     archive(id: string, revision: unknown, restore?: boolean): Promise<MediaProject>;

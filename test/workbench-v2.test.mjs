@@ -766,3 +766,39 @@ test('CoachmarkTour trigger, spotlight popover, directional arrow, 4-step progre
   autoOpenTree = modalEnv.render(AutoPage)
   assert.equal(modalEnv.findAll(autoOpenTree, n => n.props?.className?.includes('w-tour-layer')).length, 0, 'auto-tour closes when a modal dialog is open')
 })
+
+test('W.Styles mounts a single deduplicated <style> in document.head across Page, Empty and Dialog, and ProjectLibrary uses <search>', () => {
+  const env = createMiniEnv({ withHostPrimitives: false })
+  const headNodes = new Map()
+  const docWithHead = {
+    ...env.document,
+    head: {
+      appendChild(node) { headNodes.set(node.id, node) },
+    },
+    getElementById(id) { return headNodes.get(id) || null },
+    createElement(tag) { return { tag, id: '', textContent: '', setAttribute() {}, click() {}, remove() {}, style: {} } },
+  }
+  const sandbox = {
+    window: { ...env.window, document: docWithHead },
+    document: docWithHead,
+    CustomEvent: env.window.CustomEvent,
+    React: env.React,
+    __W: null,
+  }
+  runInNewContext(WORKBENCH_UI + '\n__W = createWorkbenchUI(React);', sandbox)
+  const W = sandbox.__W
+
+  function MultiSurface() {
+    return env.React.createElement('div', null,
+      env.React.createElement(W.Page, { workbench: true, title: 'S' },
+        env.React.createElement(W.Empty, { title: 'Empty' })),
+      env.React.createElement(W.Dialog, { title: 'D', closeLabel: 'Close', onClose() {} }, 'body'))
+  }
+  const tree = env.render(MultiSurface)
+  assert.equal(headNodes.size, 1, 'Page + Empty + Dialog share one singleton <style> in document.head')
+  assert.ok(headNodes.has('dsh-workbench-ui-v3-styles'))
+  assert.equal(env.findAll(tree, n => n.type === 'style').length, 0, 'no duplicate inline <style> nodes in DOM tree')
+  assert.ok(BUNDLE.includes("h('search', { className: 'project-library-controls' }"), 'ProjectLibrary uses semantic <search>')
+  assert.ok(BUNDLE.includes('SLIDESHOW_DURATION'), 'mediaError translates structured slideshow duration code')
+  assert.ok(BUNDLE.includes("prepare: ['init', 'install', 'verify-cli', 'browser']"), 'Remotion uses exact 4-step prepare progress')
+})
