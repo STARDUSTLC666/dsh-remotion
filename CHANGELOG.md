@@ -1,5 +1,13 @@
 # 更新记录
 
+## 0.13.0 (2026-11-22)
+
+- **OP-DSH 实体多轨导演台（默认进入，支持一键切回「表单」模式）**：
+  - 与共享媒体工作台同步升级工程编辑页，新增「导演台 / 表单」切换条：默认呈现暗色凹陷实时监看台（`16:9` / `9:16` / `1:1` 实时分镜与 `TC` 时间码）、可点击跳帧的 **24-LED 渲染矩阵**，以及成片 MP4 回放切换。
+  - 右侧实体参数条提供机械画幅键、模板胶囊、3–30 秒滑杆与可折叠脚本编辑器；底部全宽多轨时间线提供朱红 `▶ 播放` / `❚❚ 暂停` 硬件按键（默认暂停，遵循 WCAG 2.2.2）及 `setPointerCapture` 拖拽擦洗的「画面轨 / 字幕轨 / 节奏轨」。
+- **交互引导、英文顶栏适配与文档焕新**：更新 5 步「? 引导」导览锚点，优化英文顶栏紧凑排布与窄容器自动换行，同步更新双语 README、使用说明、8 张浅深色流程示意图与最新工作台实景截图。
+- **OP-DSH Hardware Multi-Track Director Console (default view with 1-click `Form` toggle)**: synced from the shared media workbench with recessed live stage monitor (`16:9`/`9:16`/`1:1` + `TC`), clickable 24-LED Render Matrix, tactile parameter strip, vermilion Play/Pause key (paused by default), pointer-scrubbable Video/Caption/Pace timeline, updated 5-step `? Tour`, crisp English header layout, and refreshed bilingual docs, workflow SVGs, and screenshots.
+
 ## 0.12.10 (2026-11-22)
 
 - 同步共享媒体工作台的 HyperFrames 版本表（`0.9.77`）与共享测试清单，保持跨插件源文件一致；Remotion 引擎与 13 个内置官方技能仍固定为最新稳定版 `4.0.545`。

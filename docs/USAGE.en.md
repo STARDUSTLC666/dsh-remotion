@@ -24,13 +24,13 @@ Then restart the web service. To clean up fully, also remove the plugin entry fr
 
 ## Video workbench
 
-Open Settings → Remotion in DSH Web or Desktop.
+Open **Remotion** from the sidebar (or Settings → Remotion) in DSH Web or Desktop. The editor opens in the **OP-DSH Multi-Track Hardware Director Console** by default (with a 1-click toggle to classic **Form** mode), 13 bright themes, 8 font pairings, and a header **? Tour** coachmark guide:
 
-1. Create a video. Select title card, product card or slideshow; set title/body, canvas and 3–30 seconds, then save.
+1. **Direct & scrub in the console**: Click **New video** or open a project. Use the tactile right strip to edit the title, press `16:9 / 9:16 / 1:1` mechanical keys, pick a template, set a 3–30s duration, and expand **Script**; press the vermilion `▶ Play` key or drag across the Video / Caption / Pace tracks and 24-LED Render Matrix to scrub live frames and `TC` timecode in the recessed stage monitor, then save.
 2. Upload local PNG/JPEG/WebP copies, one MP3/WAV/M4A background audio and one muted MP4 background video. Limits: 20 MB each, 40 MB total. Slideshow follows upload order and needs at least two seconds per image.
 3. Explicitly prepare the environment. It downloads official CLI 4.0.545 and Remotion's bundled `chrome-headless-shell` browser (set `REMOTION_BROWSER_EXECUTABLE` to explicitly use a custom browser). You can continue editing during preparation. Check the [official Remotion license](https://www.remotion.dev/license) for your use case.
 4. Start official Studio and inspect the picture. Stop this preview before editing or exporting; no window opens automatically.
-5. Review the pre-export check (title, canvas and duration, media count, saved revision, renderer, which revision the last MP4 used), then play and download the MP4 in the workbench. Later edits preserve earlier MP4s and display a revision warning. Export again for a new final output.
+5. Review the pre-export check (title, canvas and duration, media count, saved revision, renderer, which revision the last MP4 used), then switch the monitor to **MP4** to play and download the output in the workbench. Later edits preserve earlier MP4s and display a revision warning. Export again for a new final output.
 
 Preview and export jobs show their current step (for example "Step 2 / 3 · Rendering MP4"), a collapsible job log and a cancel button. A failed job keeps the project and offers "Retry this task" without re-entering input. A project changed elsewhere is never overwritten silently: the banner offers "Reload the latest version (discard my input)" or "Keep my input for now", and the unsaved-changes dialog blocks "Save and continue" so the same conflict cannot repeat. When Save or Export is unavailable, hover the button to read the exact reason (unsaved changes, renderer not prepared, title or duration out of range).
 

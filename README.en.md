@@ -2,7 +2,7 @@
 
 # Remotion
 
-**Build and export React video projects in DeepSeek Harness with a 13-theme, 8-font studio workbench.**
+**Build and export React video projects in DeepSeek Harness with the OP-DSH Hardware Multi-Track Director Console, 13 bright themes, and 8 dual-layer fonts.**
 
 [![npm](https://img.shields.io/npm/v/dsh-remotion)](https://www.npmjs.com/package/dsh-remotion) [![downloads](https://raw.githubusercontent.com/STARDUSTLC666/dsh-suite/npm-downloads/assets/dsh-remotion-downloads.svg)](https://www.npmjs.com/package/dsh-remotion) [![total downloads](https://raw.githubusercontent.com/STARDUSTLC666/dsh-suite/npm-downloads/assets/dsh-remotion-total-downloads.svg)](https://www.npmjs.com/package/dsh-remotion)
 
@@ -17,10 +17,10 @@
 
 ## Features
 
-- Use official skills and workbench templates.
-- Manage projects, media order and Studio previews.
-- Render local MP4 files and keep editable project backups.
-- Adapted for DeepSeek Harness `>=0.2.2-rc.3` with 13 switchable bright studio themes (Native Airy / Warm Cream / Claude Warmth / Bright 8-Bit / Airy Mint / Daylight Glass / E-Ink Paper / Blueprint / Riso Zine / Retro 98 / Song Xuan / Aqua Gloss / Gazette) and 8 dual-layer font pairings.
+- **OP-DSH Multi-Track Hardware Director Console (default)**: Recessed dark-bezel Live Stage Monitor (`16:9` / `9:16` / `1:1`, live `TC` timecode & clickable 24-LED Render Matrix), tactile right parameter strip (mechanical aspect keys, template pills, 3–30s duration slider & inline script editor), and full-width scrubbable Video / Caption / Pace timeline deck with vermilion `▶ Play` key — plus 1-click toggle to classic **Form** mode.
+- Use official Remotion skills and workbench templates to manage projects, media order and Studio previews.
+- Render local HD MP4 files and keep editable project backups.
+- Adapted for DeepSeek Harness `>=0.2.2-rc.3` with 13 switchable bright studio themes (Native Airy / Warm Cream / Claude Warmth / Bright 8-Bit / Airy Mint / Daylight Glass / E-Ink Paper / Blueprint / Riso Zine / Retro 98 / Song Xuan / Aqua Gloss / Gazette) and 8 dual-layer font pairings (default: YouYuan Mono).
 
 <details>
 <summary>See an example</summary>
@@ -43,11 +43,11 @@ For the web profile, replace `desktop` with `web`. Restart that DSH profile afte
 
 ## Start using it
 
-1. Open Remotion in the sidebar, choose New video, select a template and enter content.
-2. Save the project, upload images, audio or video, and reorder images in Media when needed.
-3. Prepare the official renderer in Environment on first use, then start Studio preview.
-4. Inspect and stop the preview before editing or exporting MP4. Export again after changing the project.
-5. Download MP4 or editable source from Exports, and organize projects with library search and archives.
+1. **Create or open a project**: Open Remotion in the sidebar and click **New video** or open an existing project to land in the **OP-DSH Director Console** (toggle to classic **Form** mode anytime in 1 click).
+2. **Direct & scrub scenes live**: Edit the title, press mechanical `16:9 / 9:16 / 1:1` keys, pick templates, drag the 3–30s slider, and expand **Script** for line-by-line scenes; press the vermilion `▶ Play` key or pointer-scrub the Video / Caption / Pace tracks and 24-LED Render Matrix to inspect pacing live.
+3. **Save & organize media**: Save the project, upload images, audio or muted video copies, and reorder images in **Media** when needed.
+4. **Prepare renderer & Studio preview**: Prepare the official renderer in **Environment** on first use, then start official Studio preview and inspect final motion.
+5. **Export MP4 & keep backups**: Confirm the pre-export summary to render HD MP4 locally, switch the monitor to **MP4** or visit **Exports** to download MP4 and editable source, and organize projects with library search and archives.
 
 Example request：
 

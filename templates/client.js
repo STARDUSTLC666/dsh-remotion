@@ -106,7 +106,7 @@ window.__ModuleLoader__.load({ id: 'dsh-__ENGINE__', factory: require => {
         }
         function urlFor(project, kind, extra = {}) { const url = new URL(route, document.baseURI); url.search = new URLSearchParams({ id: project.id, kind, ...extra }); return url.href; }
         function Workbench({locale,workbench=false}={}) {
-            const [editorTab,setEditorTab]=useState('content'),[libraryTab,setLibraryTab]=useState('projects');const controlId=React.useId();
+            const [editorTab,setEditorTab]=useState('content'),[libraryTab,setLibraryTab]=useState('projects'),[editorMode,setEditorMode]=useState('director');const controlId=React.useId();
             const [lang, setLang] = useState('zh'), [projects, setProjects] = useState([]), [archived, setArchived] = useState([]), [corruptedCount, setCorruptedCount] = useState(0), [archiveReview, setArchiveReview] = useState(false), [archiveTarget, setArchiveTarget] = useState(null), [environment, setEnvironment] = useState(null), [templates, setTemplates] = useState([]);
             const initialFields = cache.fields || empty();
             const [project, setProject] = useState(cache.project), [fields, setFields] = useState(initialFields), [durationText, setDurationText] = useState(String(initialFields.duration ?? 8)), [durationTouched, setDurationTouched] = useState(false), [dirty, setDirty] = useState(cache.dirty), [creating, setCreating] = useState(cache.creating);
@@ -323,11 +323,11 @@ __stardustUpdatesGuard(React, "dsh-__ENGINE__", { dirty, busy: busy || activeJob
             const mediaTourSteps = [
                 {
                     id: 'create',
-                    selector: '[data-tour="media-create"]',
+                    selector: project || creating ? '[data-tour="media-mode"]' : '[data-tour="media-create"]',
                     fallback: '.w-header-actions',
                     side: 'bottom',
-                    title: t('从对话或模板快速创建视频工程', 'Create a video project from chat or templates'),
-                    desc: t('点击顶栏「新建视频」选择模板起稿，或复制下方指令发到对话，让助手自动编排分镜与工程参数。', 'Click New video in the header to start from a template, or copy the prompt below into chat to generate scenes automatically.'),
+                    title: t('新建视频工程 · 导演台 / 表单一键切换', 'New video project · Director / Form toggle'),
+                    desc: t('点击顶栏「新建视频」或打开工程，默认进入 OP-DSH 实体导演台（可随时切回「表单」模式），也可复制下方指令让助手自动编排分镜。', 'Click New video or open a project to launch the OP-DSH Director Console by default (toggle to Form anytime), or copy the prompt below into chat.'),
                     prompt: t('帮我制作一段 30 秒的产品亮点展示动画视频，配置好镜头节奏并准备导出 MP4', 'Create a 30-second product highlight motion video with clean scene pacing ready for MP4 export'),
                     promptLabel: t('复制视频生成指令', 'Copy video prompt'),
                 },
@@ -336,24 +336,32 @@ __stardustUpdatesGuard(React, "dsh-__ENGINE__", { dirty, busy: busy || activeJob
                     selector: '[data-tour="media-preview"]',
                     fallback: '[data-tour="media-tab-preview"], [data-tour="media-tab-projects"], .w-empty',
                     side: 'bottom',
-                    title: t('实时画面预览与播放核对', 'Live Studio preview & playback check'),
-                    desc: t('在预览画布启动官方 Studio 实时查看动画节奏，导出后也可直接在内置播放器中逐帧核对成片。', 'Launch the official Studio preview from the canvas to inspect motion timing, and play exported MP4s inline.'),
+                    title: t('凹陷实时监看台与 24-LED 渲染矩阵', 'Live Stage Monitor & 24-LED Render Matrix'),
+                    desc: t('暗色监看屏按 16:9 / 9:16 / 1:1 实时渲染当前分镜、标题与时间码（TC），点击 24 点 LED 矩阵即可快速定位帧位，导出后还可切至成片 MP4 回放。', 'The recessed dark-bezel stage previews live scenes, title, and timecode (TC) in 16:9 / 9:16 / 1:1. Click any LED in the 24-LED Render Matrix to jump frames, or switch to exported MP4 playback.'),
+                },
+                {
+                    id: 'timeline',
+                    selector: '[data-tour="media-timeline"]',
+                    fallback: '[data-tour="media-projects"], .w-tabs',
+                    side: 'top',
+                    title: t('朱红播放键与多轨指针擦洗时间线', 'Vermilion Play Key & Scrubbable Multi-Track Timeline'),
+                    desc: t('按下朱红「▶ 播放」键顺滑推进时间线，或直接按住拖动指针擦洗「画面轨 / 字幕轨 / 节奏轨」，实时联动上方监看画面。', 'Press the vermilion ▶ Play key to advance playback smoothly, or drag the orange playhead across Video, Caption, and Pace tracks to scrub live.'),
                 },
                 {
                     id: 'inspector',
-                    selector: project || creating ? '[data-tour="media-inspector"]' : '[data-tour="media-projects"]',
+                    selector: project || creating ? '[data-tour="media-inspector"]' : '.dsh-style-switcher',
                     fallback: '.w-tabs',
                     side: project || creating ? 'left' : 'bottom',
-                    title: t('调整工程参数、字幕与素材顺序', 'Tune parameters, captions & media order'),
-                    desc: t('自由修改标题、分镜文案、画幅比例与时长，并在「素材」页上传图片/配乐或调整轮播顺序。', 'Edit titles, scene copy, aspect ratio, and duration, or upload images/audio and reorder slides in Media.'),
+                    title: t('实体参数条、分镜脚本与 13 风格 / 8 字体', 'Tactile Parameter Strip, Script & 13 Styles / 8 Fonts'),
+                    desc: t('在右侧机械键区一键切换画幅比例、视觉模板、3–30s 时长滑杆与内联分镜脚本；顶栏可切换 13 套明亮风格与 8 套双层字体。', 'Use the right tactile strip for mechanical aspect keys, template pills, 3–30s duration slider, and inline script editing; switch 13 bright styles & 8 fonts in the header.'),
                 },
                 {
                     id: 'export',
                     selector: '[data-tour="media-export"]',
                     fallback: '[role="tab"][data-tab-id="environment"], .w-header-actions',
                     side: 'bottom',
-                    title: t('本地渲染导出高清 MP4', 'Render & export HD MP4 locally'),
-                    desc: t('首次导出前在「环境」页一键准备渲染工具，核对修订摘要后即可在本地渲染并下载高清 MP4。', 'Prepare the renderer once in Environment, review the revision summary, and render HD MP4 files locally.'),
+                    title: t('Studio 预览与本地渲染导出高清 MP4', 'Official Studio Preview & Local HD MP4 Export'),
+                    desc: t('首次导出前在「环境」页一键准备本地渲染工具，启动官方 Studio 核对效果后，即可核对修订摘要并在本地渲染下载高清 MP4。', 'Prepare the local renderer once in Environment, verify motion in official Studio, review the revision summary, and export HD MP4 files locally.'),
                 },
             ];
             const activeViewTab = project || creating ? editorTab : libraryTab;
@@ -362,7 +370,7 @@ __stardustUpdatesGuard(React, "dsh-__ENGINE__", { dirty, busy: busy || activeJob
                 value: activeViewTab,
                 onChange: project || creating ? setEditorTab : setLibraryTab,
                 items: project || creating
-                    ? [{ id: 'content', icon: 'play', 'data-tour': 'media-tab-preview', label: t('内容与预览', 'Content and preview') }, { id: 'assets', icon: 'image', label: t('素材', 'Media') }, { id: 'exports', icon: 'download', label: t('导出记录', 'Exports') }, { id: 'environment', icon: 'settings', label: t('环境', 'Environment') }]
+                    ? [{ id: 'content', icon: 'play', 'data-tour': 'media-tab-preview', label: t('内容与预览', 'Content') }, { id: 'assets', icon: 'image', label: t('素材', 'Media') }, { id: 'exports', icon: 'download', label: t('导出记录', 'Exports') }, { id: 'environment', icon: 'settings', label: t('环境', 'Environment') }]
                     : [{ id: 'projects', icon: 'video', 'data-tour': 'media-tab-projects', label: t('当前工程', 'Projects'), count: projects.length }, { id: 'archives', icon: 'folder', label: t('已归档', 'Archived'), count: archived.length }, { id: 'environment', icon: 'settings', label: t('环境', 'Environment') }],
             };
             const headerMeta = (project || creating)
@@ -371,8 +379,8 @@ __stardustUpdatesGuard(React, "dsh-__ENGINE__", { dirty, busy: busy || activeJob
             const mediaClientCss = css + '\n' + MEDIA_WORKBENCH_CSS;
             if(!environment) return h(W.Page,{workbench,lang,icon:studioIcon,tourSteps:mediaTourSteps,tourStorageKey,onTourCopyPrompt:copyTourPrompt,title,subtitle:t('编辑视频工程，预览并导出 MP4。','Edit video projects, preview and export MP4.'),className:'dmw media-workbench','aria-busy':busy?'true':undefined},h(W.Styles,{id:'dsh-media-workbench-styles',cssText:mediaClientCss}),error?h(W.Empty,{title:t('暂时无法读取工程','Projects are unavailable'),action:h(W.Button,{icon:'refresh','aria-busy':busy?'true':undefined,disabled:busy,onClick:()=>perform(refresh)},t('重新读取项目','Reload projects'))},mediaError(error,lang==='en')):h('div',{className:'media-loading-skeleton'},h(W.Skeleton,{variant:'card',label:t('正在读取工程与渲染环境…','Loading projects and render environment…')}),h(W.Skeleton,{variant:'row'}),h(W.Skeleton,{variant:'row'}),h(W.Skeleton,{variant:'row'})));
             return h(W.Page,{workbench,lang,icon:studioIcon,headerMeta,tabs:headerTabsConfig,tourSteps:mediaTourSteps,tourStorageKey,onTourCopyPrompt:copyTourPrompt,title,subtitle:t('编辑视频工程，预览并导出 MP4。','Edit video projects, preview and export MP4.'),className:'dmw media-workbench','aria-busy':running?'true':undefined,actions:h(React.Fragment,null,
- project || creating ? h(W.Button,{icon:'left','data-tour':'media-create',disabled:running,onClick:()=>navigate('list')},t('返回项目','Back to projects')) : h(W.Button,{icon:'plus','data-tour':'media-create',variant:'primary',disabled:running,onClick:()=>navigate('new')},t('新建视频','New video')),
- project || creating ? h(W.Button,{variant:'primary',icon:'check',disabled:running || !canSave || !!project && !dirty,title:saveHint || undefined,onClick:()=>perform(save)},t('保存工程','Save project')) : h(W.IconButton,{icon:'refresh',label:t('刷新项目','Refresh projects'),'aria-busy':busy?'true':undefined,disabled:running,onClick:()=>perform(refresh)}),
+ project || creating ? h(W.Button,{icon:'left','data-tour':'media-create',disabled:running,title:t('返回项目','Back to projects'),onClick:()=>navigate('list')},t('返回项目','Back')) : h(W.Button,{icon:'plus','data-tour':'media-create',variant:'primary',disabled:running,onClick:()=>navigate('new')},t('新建视频','New video')),
+ project || creating ? h(W.Button,{variant:'primary',icon:'check',disabled:running || !canSave || !!project && !dirty,title:saveHint || t('保存工程','Save project'),onClick:()=>perform(save)},t('保存工程','Save')) : h(W.IconButton,{icon:'refresh',label:t('刷新项目','Refresh projects'),'aria-busy':busy?'true':undefined,disabled:running,onClick:()=>perform(refresh)}),
  project ? h(W.Button,{icon:'download','data-tour':'media-export',disabled:running || dirty || !environment.ready,title:exportHint,onClick:()=>setExportReview(true)},t('导出 MP4','Export MP4')) : null)},
  h(W.Styles,{id:'dsh-media-workbench-styles',cssText:mediaClientCss}),h(W.Status,{tone:'error'},conflict ? t('工程已在别处更新，当前输入尚未保存。先复制需要的修改，再重新载入最新修订。', 'The project changed elsewhere and your input is not saved yet. Copy what you need, then reload the latest revision.') : error && mediaError(error,lang==='en')),h(W.Status,{tone:'success'},notice),corruptedCount > 0 ? h(W.Status,{tone:'warn'},t(`发现 ${corruptedCount} 个损坏工程目录（原文件已保留），其余工程不受影响。`, `Found ${corruptedCount} damaged project folder(s) (original files preserved). Other projects remain available.`)) : null,conflict && project ? h('div',{className:'w-toolbar'},h(W.Button,{icon:'refresh',disabled:running,onClick:()=>setPending(project.id)},t('重新载入最新版本（放弃我的输入）','Reload the latest version (discard my input)')),h(W.Button,{variant:'ghost',disabled:running,onClick:()=>setConflict(false)},t('保留我的输入，稍后处理','Keep my input for now'))) : null,
  (project || creating) && !environment.ready ? h(W.Status,null,t('首次导出前需要准备本地渲染环境；内容可以先编辑和保存。','Prepare the local renderer before your first export. You can edit and save content now.'),' ',h(W.Button,{variant:'ghost',icon:'right',onClick:()=>setEditorTab('environment')},t('查看环境','View environment'))) : null,
@@ -386,7 +394,17 @@ __stardustUpdatesGuard(React, "dsh-__ENGINE__", { dirty, busy: busy || activeJob
  !project && !creating ? libraryTab === 'environment' ? h(MediaEnvironment,{engine,environment,activeJob,job,busy,start,t}) : libraryTab === 'archives' ? archived.length ? h('section',{className:'media-project-list'},h('p', { className: 'muted' }, t('归档保留素材与成品，不占当前 30 个工程名额。恢复后可以继续编辑。', 'Archives retain media and output, freeing an active project slot. Restore to edit again.')),
 h(ProjectLibrary,{items:archived,scope:'archives',language:lang,t,searchHint:t('搜索归档工程','Search archived projects'),searchText:p=>[p.title,p.body,p.template].join(' '),updatedAt:p=>p.updated,renderItem:p=>h('div', { className: 'bar dsh-row', 'data-dsh-row': '', 'data-dsh-card': '', key: p.id }, h('strong', { 'data-dsh-serif': '' }, p.title), h('div', { className: 'dsh-row-actions', 'data-window-drag-exclude': '' }, h(W.Button, { icon: 'reply', disabled: busy || dirty || activeJob, onClick: () => perform(async () => { await api({ action: 'restore', id: p.id, revision: p.revision, confirmed: true }); await refresh(); await open(p.id); setNotice(t('工程已恢复。', 'Project restored.')); }) }, t('恢复工程', 'Restore project'))))})) : h(W.Empty,{title:t('没有归档工程','No archived projects'),icon:'folder'}) : projects.length ? h('div',{className:'media-project-list','data-tour':'media-projects'},h(ProjectLibrary,{items:projects,language:lang,t,searchHint:t('搜索标题、正文或模板','Search titles, text or templates'),searchText:p=>[p.title,p.body,p.template,templates.find(row=>row.id===p.template)?.[lang==='en'?'en':'zh']].join(' '),updatedAt:p=>p.updated,renderItem:p=>h(W.Row,{key:p.id,title:p.title,disabled:running,meta:p.duration+t(' 秒 · 修订 ',' sec · revision ')+p.revision,description:(templates.find(row=>row.id===p.template)?.[lang==='en'?'en':'zh'] || p.template),actions:h(React.Fragment,null,h(W.Button,{size:'sm',icon:'edit',disabled:running,onClick:()=>{setEditorTab('content');navigate(p.id);}},t('编辑','Open')),h(W.Button,{size:'sm',variant:'ghost',icon:'folder',disabled:busy||dirty||activeJob,onClick:()=>setArchiveTarget(p)},t('归档','Archive'))),onClick:()=>{setEditorTab('content');navigate(p.id);}})})) : h(W.Empty,{title:t('还没有视频工程','No video projects yet'),icon:'video',action:h(W.Button,{variant:'primary',icon:'plus',disabled:running,onClick:()=>navigate('new')},t('新建视频','New video'))},t('点击“新建视频”，选择模板并保存。环境可以稍后准备。','Choose New video, select a template and save. The renderer can be prepared later.')) :
  editorTab === 'environment' ? h(MediaEnvironment,{engine,environment,activeJob,job,busy,start,t}) : editorTab === 'assets' ? h(MediaAssets,{project,dirty,running,fileRef,upload,perform,setProject,t}) : editorTab === 'exports' ? h(MediaExports,{project,dirty,running,activeJob,busy,setArchiveReview,t}) :
- h('div',{className:'media-editor',style:{'--media-fields-width':fieldsSplit.size+'px','--media-inspector-width':inspectorSplit.size+'px'}},h('section',{className:'media-content-fields','data-dsh-card':''},h('h3',{'data-dsh-serif':''},t('模板与内容','Template and content')),h('div',{className:'media-field'},h('label', { htmlFor: controlId+'-template' }, t('模板', 'Template')),h('select', { id: controlId+'-template', disabled: running, value: fields.template, onChange: e => { setFields({ ...fields, template: e.target.value }); setDirty(true); } }, templates.map(row => h('option', { key: row.id, value: row.id }, lang === 'en' ? row.en : row.zh)))),
+ h(React.Fragment,null,
+  h('div',{className:'media-console-bar'},
+   h('div',{className:'media-console-id'},
+    h('span',{className:'media-console-chip'},'OP-DSH · '+title.toUpperCase()),
+    h('span',null,project?(dirty?t('有未保存修改','Unsaved changes'):t('已保存 · 修订 ','Saved · revision ')+project.revision):t('新建视频工程','New video project'))),
+   h('div',{className:'media-mode-switch','data-tour':'media-mode',role:'group','aria-label':t('编辑模式切换','Editor mode switch')},
+    h('button',{type:'button',className:'media-mode-btn','data-director-mode':'director','aria-pressed':editorMode==='director',onClick:()=>setEditorMode('director')},t('导演台','Director')),
+    h('button',{type:'button',className:'media-mode-btn','data-director-mode':'form','aria-pressed':editorMode==='form',onClick:()=>setEditorMode('form')},t('表单','Form')))),
+  editorMode === 'director'
+   ? h(MediaDirectorConsole,{engine,title,project,fields,setFields,durationText,setDurationText,setDurationTouched,durationValid,dirty,setDirty,setError,syncFields,fieldsOf,templates,lang,render,stale,job,running,ready:environment.ready,busy,start,perform,setNotice,setEditorTab,setExportReview,slideshowWarning,exportHint,controlId,t})
+   : h('div',{className:'media-editor',style:{'--media-fields-width':fieldsSplit.size+'px','--media-inspector-width':inspectorSplit.size+'px'}},h('section',{className:'media-content-fields','data-dsh-card':''},h('h3',{'data-dsh-serif':''},t('模板与内容','Template and content')),h('div',{className:'media-field'},h('label', { htmlFor: controlId+'-template' }, t('模板', 'Template')),h('select', { id: controlId+'-template', disabled: running, value: fields.template, onChange: e => { setFields({ ...fields, template: e.target.value }); setDirty(true); } }, templates.map(row => h('option', { key: row.id, value: row.id }, lang === 'en' ? row.en : row.zh)))),
 h('div',{className:'media-field'},h('label', { htmlFor: controlId+'-title' }, t('标题（最多 72 字符）', 'Title (up to 72 characters)')),h(W.Input, { id: controlId+'-title', value: fields.title, disabled: running, maxLength: 72, onChange: e => { setFields({ ...fields, title: e.target.value }); setDirty(true); } })),
 h('div',{className:'media-field'},h('label', { htmlFor: controlId+'-body' }, t('正文（轮播时每行对应一页）', 'Body (one line per slideshow page)')),h('textarea', { id: controlId+'-body', value: fields.body, disabled: running, maxLength: 360, rows: 4, onChange: e => { setFields({ ...fields, body: e.target.value }); setDirty(true); } })),slideshowWarning ? h(W.Status,{tone:'warn'},slideshowWarning) : null,dirty?h('p',{className:'w-muted'},t('有未保存修改；切换工程前会提醒。','Unsaved changes. You will be asked before switching projects.')):project?h('p',{className:'w-muted'},t('已保存 · 修订 ','Saved · revision ')+project.revision):null,project && h(W.Button, { icon: 'close', disabled: running || !dirty, onClick: () => { syncFields(fieldsOf(project)); setDirty(false); setError(''); } }, t('取消修改', 'Discard changes'))),
  h(W.SplitResizer,{...fieldsSplit.resizerProps,className:'media-split-resizer media-split-resizer-left',label:t('调整内容栏宽度','Resize content column')}),
@@ -395,7 +413,7 @@ h('div',{className:'media-field'},h('label', { htmlFor: controlId+'-body' }, t('
  h('aside',{className:'media-properties','data-tour':'media-inspector','data-dsh-card':''},h('h3',{'data-dsh-serif':''},t('视频设置','Video settings')),h('div',{className:'media-field'},h('label', { htmlFor: controlId+'-format' }, t('画幅', 'Canvas')),h('select', { id: controlId+'-format', value: fields.format, disabled: running, onChange: e => { setFields({ ...fields, format: e.target.value }); setDirty(true); } }, ['landscape', 'portrait', 'square'].map((key, i) => h('option', { key, value: key }, [t('横屏 16:9', 'Landscape 16:9'), t('竖屏 9:16', 'Portrait 9:16'), t('正方形', 'Square')][i])))),
 h('div',{className:'media-field'},h('label', { htmlFor: controlId+'-duration' }, t('时长（3–30 秒）', 'Duration (3–30 seconds)')),h(W.Input, { id: controlId+'-duration', type: 'number', inputMode: 'numeric', min: 3, max: 30, step: 1, value: durationText, disabled: running, 'aria-invalid': durationTouched && !durationValid ? 'true' : 'false', onBlur: () => setDurationTouched(true), onChange: e => { const raw = e.target.value; setDurationText(raw); setFields({ ...fields, duration: raw.trim() === '' ? NaN : Number(raw) }); setDirty(true); } })),
  h('section',{className:'w-section'},h('p',null,t('已上传素材 ','Uploaded media ')+(project?.assets.length || 0)),h(W.Button,{icon:'upload',disabled:!project || running || dirty,onClick:()=>setEditorTab('assets')},t('上传素材','Upload media')),project?h('a',{className:'w-button',href:urlFor(project,'source'),download:''},h(W.Icon,{name:'download',size:16}),t('下载可编辑工程','Download editable project')):null),
- h('p',{className:'w-muted'},t('导出使用本地 ','Exports use the local ')+title+t(' 引擎。',' engine.')),h('p',{className:'w-muted'},t('图片、音频和无声视频；单文件 20 MB，工程合计 40 MB。','Images, audio and muted video; 20 MB per file, 40 MB per project.')),engine==='remotion'?h('a',{href:'https://www.remotion.dev/license',target:'_blank',rel:'noopener noreferrer'},t('Remotion 许可说明','Remotion license')):null))),
+ h('p',{className:'w-muted'},t('导出使用本地 ','Exports use the local ')+title+t(' 引擎。',' engine.')),h('p',{className:'w-muted'},t('图片、音频和无声视频；单文件 20 MB，工程合计 40 MB。','Images, audio and muted video; 20 MB per file, 40 MB per project.')),engine==='remotion'?h('a',{href:'https://www.remotion.dev/license',target:'_blank',rel:'noopener noreferrer'},t('Remotion 许可说明','Remotion license')):null)))),
  project && exportReview ? h(W.Dialog,{className:'dmw media-dialog',title:t('导出前检查','Check before export'),closeLabel:t('取消导出','Cancel export'),busy:running,onClose:()=>setExportReview(false)},
  h('p', null, t('确认后启动官方渲染，生成新 MP4；工程内容不会被修改。', 'Rendering starts after you confirm and produces a new MP4. Your project is not modified.')),
  h('ul', { className: 'media-export-checks' }, h('li', null, t('标题：', 'Title: ') + project.title), h('li', null, t('画幅与时长：', 'Canvas and duration: ') + ({ landscape: t('横屏 16:9', 'Landscape 16:9'), portrait: t('竖屏 9:16', 'Portrait 9:16'), square: t('正方形', 'Square') }[project.format] || project.format) + ' · ' + project.duration + t(' 秒', ' sec')), h('li', null, t('素材：', 'Media: ') + project.assets.length + t(' 个', ' items')), h('li', null, t('修订：', 'Revision: ') + project.revision), h('li', null, t('渲染环境：', 'Renderer: ') + (environment.ready ? t('已准备', 'ready') : t('未准备', 'not ready'))), h('li', null, t('上次导出：', 'Last export: ') + (render ? t('修订 ', 'revision ') + render.revision : t('尚未导出', 'none yet')))),

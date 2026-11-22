@@ -66,8 +66,8 @@ function createMiniEnv({ withHostPrimitives = false, throwStorage = false } = {}
     __ModuleLoader__: { load() {} },
   }
 
-  const states = []
-  let cursor = 0
+  const hookStores = new Map()
+  let activeStore = { states: [], cursor: 0 }
   let idCounter = 0
   const effects = []
 
@@ -89,15 +89,17 @@ function createMiniEnv({ withHostPrimitives = false, throwStorage = false } = {}
       return function ForwardRef(props) { return render(props, props?.ref || null) }
     },
     useState(initial) {
-      const idx = cursor++
-      if (!(idx in states)) states[idx] = typeof initial === 'function' ? initial() : initial
-      const set = next => { states[idx] = typeof next === 'function' ? next(states[idx]) : next }
-      return [states[idx], set]
+      const store = activeStore
+      const idx = store.cursor++
+      if (!(idx in store.states)) store.states[idx] = typeof initial === 'function' ? initial() : initial
+      const set = next => { store.states[idx] = typeof next === 'function' ? next(store.states[idx]) : next }
+      return [store.states[idx], set]
     },
     useRef(initial) {
-      const idx = cursor++
-      if (!(idx in states)) states[idx] = { current: initial }
-      return states[idx]
+      const store = activeStore
+      const idx = store.cursor++
+      if (!(idx in store.states)) store.states[idx] = { current: initial }
+      return store.states[idx]
     },
     useMemo(fn) {
       return fn()
@@ -150,13 +152,28 @@ function createMiniEnv({ withHostPrimitives = false, throwStorage = false } = {}
     },
   }
 
-  function expand(node) {
+  function expand(node, path = '0') {
     if (!node || typeof node !== 'object') return node
-    if (Array.isArray(node)) return node.map(expand)
+    if (Array.isArray(node)) return node.map((item, idx) => expand(item, path + '.' + idx))
     if (typeof node.type === 'function') {
-      return expand(node.type(node.props || {}))
+      const key = path + ':' + (node.props?.key ?? '') + ':' + (node.type.name || 'fn')
+      let store = hookStores.get(key)
+      if (!store) {
+        store = { states: [], cursor: 0 }
+        hookStores.set(key, store)
+      }
+      store.cursor = 0
+      const prevStore = activeStore
+      activeStore = store
+      let rendered
+      try {
+        rendered = node.type(node.props || {})
+      } finally {
+        activeStore = prevStore
+      }
+      return expand(rendered, path)
     }
-    const expandedChildren = (node.children || []).map(expand).flat(Infinity).filter(c => c !== null && c !== undefined && c !== false && c !== true)
+    const expandedChildren = (node.children || []).map((child, idx) => expand(child, path + '.' + idx)).flat(Infinity).filter(c => c !== null && c !== undefined && c !== false && c !== true)
     if (typeof node.props?.ref === 'function') {
       const attrs = new Map()
       const portalDialog = {
@@ -179,7 +196,6 @@ function createMiniEnv({ withHostPrimitives = false, throwStorage = false } = {}
   }
 
   function render(Component, props = {}) {
-    cursor = 0
     idCounter = 0
     effects.length = 0
     return expand(React.createElement(Component, props))
@@ -518,13 +534,28 @@ test('UI v3 primitives: 48px header, sliding tabs, resizable split columns, shim
   assert.ok(projectEnv.findAll(libTree, n => n.props?.className?.includes('dsh-row-actions')).length >= 1, 'row hover quick-action bar rendered on project row')
   assert.ok(projectEnv.findAll(libTree, n => n.props && Object.hasOwn(n.props, 'data-dsh-serif')).length >= 1, 'editorial serif markers present')
 
-  // Open project -> verify resizable SplitResizer columns in editor
+  // Open project -> verify default OP-DSH 导演台 mode (stage monitor, 24-LED matrix, play button without aria-pressed, multi-track timeline), then switch to 表单 mode for 2 SplitResizers
   const rowBtn = projectEnv.findAll(libTree, n => n.type === 'button' && n.props?.className === 'w-row-button')[0]
   assert.ok(rowBtn, 'project row button renders')
   await rowBtn.props.onClick()
   for (let i = 0; i < 6; i++) await Promise.resolve()
+  const directorTree = projectEnv.render(main2.component, { workbench: true, locale: { getSnapshot: () => ({ active: 'zh' }) } })
+  assert.ok(projectEnv.findAll(directorTree, n => n.props?.['data-director-console'] === 'true').length === 1, 'editor defaults to OP-DSH 导演台 console')
+  assert.equal(projectEnv.findAll(directorTree, n => n.props?.className === 'media-led-dot').length, 24, 'stage monitor renders 24-LED render matrix')
+  const playBtn = projectEnv.findAll(directorTree, n => n.type === 'button' && n.props?.className === 'media-transport-play')[0]
+  assert.ok(playBtn, 'vermilion play/pause button renders')
+  assert.equal(playBtn.props['aria-pressed'], undefined, 'play/pause toggle button must not declare aria-pressed (WCAG 2.2.2)')
+  assert.ok(JSON.stringify(playBtn.children).includes('播放'), 'play button defaults to paused')
+  playBtn.props.onClick()
+  const playingTree = projectEnv.render(main2.component, { workbench: true, locale: { getSnapshot: () => ({ active: 'zh' }) } })
+  const pauseBtn = projectEnv.findAll(playingTree, n => n.type === 'button' && n.props?.className === 'media-transport-play')[0]
+  assert.ok(JSON.stringify(pauseBtn.children).includes('暂停'), 'clicking play toggles label to pause')
+  assert.equal(pauseBtn.props['aria-pressed'], undefined, 'pause state must not declare aria-pressed')
+  const formToggle = projectEnv.findAll(playingTree, n => n.type === 'button' && n.props?.['data-director-mode'] === 'form')[0]
+  assert.ok(formToggle, 'mode toggle includes 表单 button')
+  formToggle.props.onClick()
   const editorTree = projectEnv.render(main2.component, { workbench: true, locale: { getSnapshot: () => ({ active: 'zh' }) } })
-  assert.equal(projectEnv.findAll(editorTree, n => n.props?.role === 'separator').length, 2, 'editor renders 2 DshSplitResizer separators for fields & inspector columns')
+  assert.equal(projectEnv.findAll(editorTree, n => n.props?.role === 'separator').length, 2, '表单 mode renders 2 DshSplitResizer separators for fields & inspector columns')
   assert.ok(projectEnv.findAll(editorTree, n => n.props?.className?.includes('dsh-tab-indicator')).length === 1, 'editor header retains sliding tab indicator')
 })
 
@@ -633,8 +664,8 @@ test('CoachmarkTour trigger, spotlight popover, directional arrow, 4-step progre
   assert.equal(card.props['aria-labelledby'], titleEl.props.id)
   const arrow = env.findAll(card, n => n.props?.['data-tour-arrow'])[0]
   assert.ok(arrow, 'coachmark card renders directional [data-tour-arrow]')
-  assert.equal(env.findAll(card, n => n.props?.className === 'w-tour-step-badge')[0].children[0], '1 / 4')
-  assert.equal(env.findAll(card, n => n.props?.className === 'w-tour-dot').length, 4)
+  assert.equal(env.findAll(card, n => n.props?.className === 'w-tour-step-badge')[0].children[0], '1 / 5')
+  assert.equal(env.findAll(card, n => n.props?.className === 'w-tour-dot').length, 5)
 
   // Step 1 inline 1-click prompt copy
   const expectedPrompt = '帮我制作一段 30 秒的产品亮点展示动画视频，配置好镜头节奏并准备导出 MP4'
@@ -647,8 +678,8 @@ test('CoachmarkTour trigger, spotlight popover, directional arrow, 4-step progre
   const copiedBtn = env.findAll(card, n => n.props?.['data-copy-prompt'] === expectedPrompt)[0]
   assert.equal(copiedBtn.props['data-copied'], 'true')
 
-  // Step progression 1 -> 2 -> 3 -> 4 -> Done
-  for (const expectedStep of ['2 / 4', '3 / 4', '4 / 4']) {
+  // Step progression 1 -> 2 -> 3 -> 4 -> 5 -> Done
+  for (const expectedStep of ['2 / 5', '3 / 5', '4 / 5', '5 / 5']) {
     const nextBtn = env.findAll(card, n => Object.hasOwn(n.props || {}, 'data-tour-next'))[0]
     nextBtn.props.onClick()
     tree = env.render(main.component, { workbench: true, locale: { getSnapshot: () => ({ active: 'zh' }) } })
