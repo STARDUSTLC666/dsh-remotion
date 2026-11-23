@@ -4,7 +4,7 @@
 
 ## Current improvements
 
-Save before confirming an archive; restore it from Archived projects. Archives preserve data and disk usage. Up to 30 projects can be active; stop active jobs first.
+v0.13.0 introduces the **OP-DSH Multi-Track Hardware Director Console** (enabled by default with a 1-click toggle back to classic **Form** mode), featuring a recessed stage monitor, 24-LED render matrix, scrubbable 3-track timeline, 13 bright themes, 8 bilingual font pairings, and a 5-step guided tour. Project archiving and restoration remain supported from **Archived projects** (archives preserve data and disk usage; up to 30 projects can be active, and active jobs must be stopped first).
 
 ## Installation
 

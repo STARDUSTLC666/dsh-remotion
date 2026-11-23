@@ -1,5 +1,11 @@
 # 更新记录
 
+## 0.13.1 (2026-11-23)
+
+- 修复 DSH Desktop 工作台请求兼容：`MediaWorkbench.guard()` 放行桌面端 `Origin: dsh-app://app`（含 `Sec-Fetch-Site: cross-site` 豁免）并将跨源/非法请求头拒绝状态码由 `400` 修正为 `403`，补充桌面端与跨源回归测试。
+- 完善打包与参考文档：`package.json` `files` 补齐 `docs/VALIDATION.md` 链接目标（`docs/validation-0.9.1.md`、`docs/validation-language-2026-10-03.md`）并加入清单测试校验；同步更新 `docs/REFERENCE.{zh,en}.md` 与 `docs/USAGE*.md` 至 OP-DSH 导演台与兼容更新说明，修复语言切换链接。
+- Fix DSH Desktop workbench compatibility: exempt `Origin: dsh-app://app` (including `Sec-Fetch-Site: cross-site`) in `MediaWorkbench.guard()`, return HTTP `403` for cross-origin/invalid-header rejections, ship linked validation docs in `package.json` `files`, and refresh bilingual reference/usage docs and language links.
+
 ## 0.13.0 (2026-11-22)
 
 - **OP-DSH 实体多轨导演台（默认进入，支持一键切回「表单」模式）**：

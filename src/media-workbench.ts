@@ -372,14 +372,15 @@ export class MediaWorkbench {
     }
   }
   private guard(request: Request): void {
-    const url = new URL(request.url), origin = request.headers.get('origin'), site = request.headers.get('sec-fetch-site')
+    const url = new URL(request.url), origin = request.headers.get('origin'), site = request.headers.get('sec-fetch-site'), desktop = origin === 'dsh-app://app'
     // The official carrier keeps Host but rewrites Request.url to its internal URL.
-    if (site && !['same-origin', 'none'].includes(site)) throw new MediaError('请从 DSH 页面操作。', 'ORIGIN_FORBIDDEN')
-    if (origin) {
-      const source = new URL(origin)
-      if (!['http:', 'https:'].includes(source.protocol) || source.host !== (request.headers.get('host') || url.host)) throw new MediaError('请从 DSH 页面操作。', 'ORIGIN_FORBIDDEN')
+    if (site && !['same-origin', 'none'].includes(site) && !desktop) throw new MediaError('请从 DSH 页面操作。', 'ORIGIN_FORBIDDEN', 403)
+    if (origin && !desktop) {
+      let source: URL
+      try { source = new URL(origin) } catch { throw new MediaError('请从 DSH 页面操作。', 'ORIGIN_FORBIDDEN', 403) }
+      if (!['http:', 'https:'].includes(source.protocol) || source.host !== (request.headers.get('host') || url.host)) throw new MediaError('请从 DSH 页面操作。', 'ORIGIN_FORBIDDEN', 403)
     }
-    if (request.method === 'POST' && request.headers.get('x-dsh-media') !== '1') throw new MediaError('操作来源无效。', 'ORIGIN_FORBIDDEN')
+    if (request.method === 'POST' && request.headers.get('x-dsh-media') !== '1') throw new MediaError('操作来源无效。', 'ORIGIN_FORBIDDEN', 403)
   }
   async fetch(request: Request): Promise<Response> {
     try {

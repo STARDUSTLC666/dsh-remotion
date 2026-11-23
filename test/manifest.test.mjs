@@ -13,10 +13,13 @@ test('dsh.bundle.patch 指向存在的补丁文件', () => {
   assert.ok(existsSync(new URL('../cordis.patch.yml', import.meta.url)))
 })
 
-test('files 白名单包含 lib、skills、双 README', () => {
+test('files 白名单包含 lib、skills、双 README 与验证文档链接目标', () => {
   const pkg = require('../package.json')
-  for (const entry of ['lib', 'skills', 'cordis.patch.yml', 'README.md', 'README.en.md']) {
+  for (const entry of ['lib', 'skills', 'cordis.patch.yml', 'README.md', 'README.en.md', 'docs/VALIDATION.md', 'docs/validation-0.9.1.md', 'docs/validation-language-2026-10-03.md']) {
     assert.ok(pkg.files.includes(entry), entry + ' 应在白名单')
+  }
+  for (const entry of pkg.files) {
+    assert.ok(existsSync(new URL('../' + entry, import.meta.url)), entry + ' 应存在于磁盘')
   }
 })
 
