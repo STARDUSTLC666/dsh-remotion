@@ -1,5 +1,12 @@
 # 更新记录
 
+## 0.13.2 (2026-11-24)
+
+- 活跃工程列表、已归档列表及导出页新增 **「移入回收站」** 操作与确认弹窗（`trash`）：采用零依赖跨平台系统回收站（Windows / macOS / Linux），执行修订号校验、运行任务互斥锁（`workbench-slot`）、先释放目录锁并剥离残留 `runs/*/node_modules` 联接，与 `dsh-hyperframes` 共享媒体引擎保持完全同步。
+- 外部删除工程目录后，列表加载、窗口切回（`focus` / `visibilitychange`）与列表页 8 秒静默轮询自动隐藏缺失工程（不再误报损坏），未扫到前点击打开返回 `404 PROJECT_NOT_FOUND` 并自动刷新，未扫到前手动点「移入回收站」可 0 报错直接清理列表条目。
+- Add **Move to Recycle Bin** (`trash`) with confirmation dialog on active projects, archived projects, and the Exports tab using zero-dep native OS Recycle Bin / Trash, guarded by revision checks, `workbench-slot` lock, safe lock release, and leftover run junction detachment (synced with `dsh-hyperframes`).
+- Automatically hide externally deleted project folders on refresh, window focus/visibility return, and 8s library sync without false corruption warnings; return `404 PROJECT_NOT_FOUND` on stale open and allow clean zero-error pre-scan manual removal.
+
 ## 0.13.1 (2026-11-23)
 
 - 修复 DSH Desktop 工作台请求兼容：`MediaWorkbench.guard()` 放行桌面端 `Origin: dsh-app://app`（含 `Sec-Fetch-Site: cross-site` 豁免）并将跨源/非法请求头拒绝状态码由 `400` 修正为 `403`，补充桌面端与跨源回归测试。

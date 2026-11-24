@@ -1,6 +1,6 @@
 {
   "name": "dsh-remotion",
-  "version": "0.13.1",
+  "version": "0.13.2",
   "description": "DeepSeek Harness React 视频创作工作台：内置 OP-DSH 实体多轨导演台（实时监看屏 / 24-LED 矩阵 / 可擦洗多轨时间线）、官方 Remotion 技能、工程检索、模板库、素材排序、Studio 预览与本地 MP4 导出，支持 13 套明亮风格与 8 套中英双层字体搭配。欢迎提交 issues 和 PR。",
   "type": "module",
   "main": "lib/index.js",

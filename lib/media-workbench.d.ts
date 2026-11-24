@@ -1,4 +1,4 @@
-import { MediaStore } from './media-store.js';
+import { MediaStore, type TrashPathFn } from './media-store.js';
 import { type MediaEngine } from './media-templates.js';
 interface MediaJob {
     id: string;
@@ -20,7 +20,9 @@ export declare class MediaWorkbench {
     private jobs;
     private starting;
     private disposed;
-    constructor(engine: MediaEngine, root?: string);
+    constructor(engine: MediaEngine, root?: string, options?: {
+        trashPath?: TrashPathFn;
+    });
     private explicitBrowserEnv;
     private setStage;
     private safeRemoveRunDir;

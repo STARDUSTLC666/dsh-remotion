@@ -21,6 +21,8 @@ window.__ModuleLoader__.load({ id: 'dsh-__ENGINE__', factory: require => {
                 REORDER_REVISION_REQUIRED: 'Reload the project before changing its image order.',
                 REORDER_INVALID: 'Use every current image exactly once. Reload the project before trying again.',
                 PROJECT_LIMIT: 'The 30 active project slots are full. Archive another project before creating or restoring one.',
+                PROJECT_NOT_FOUND: 'This project folder no longer exists on disk. The list has been refreshed.',
+                CONFIRM_REQUIRED: 'Confirm this action before continuing.',
                 CONFLICT: 'The project changed. Reopen the latest version and compare it with your preserved input.',
                 JOB_CONFLICT: 'A similar job is already running. Wait for it to finish or cancel it first.',
                 JOB_TIMEOUT: 'The job timed out and was stopped. Your project is preserved.',
@@ -42,7 +44,9 @@ window.__ModuleLoader__.load({ id: 'dsh-__ENGINE__', factory: require => {
             if (/先归档|已达 30/.test(message))
                 return 'The 30 active project slots are full. Archive another project before creating or restoring one.';
             if (/已有预览或渲染/.test(message))
-                return 'Stop the active preview or cancel the render before archiving or restoring a project.';
+                return 'Stop the active preview or cancel the render before archiving, restoring or trashing a project.';
+            if (/回收站/.test(message))
+                return 'Could not move the project to the Recycle Bin. Close any app using its files and try again.';
             if (error?.status === 409 || /已.*更新|另一窗口|修订/.test(message))
                 return 'The project changed. Reopen the latest version and compare it with your preserved input.';
             if (/轮播 .*至少需要/.test(message))
@@ -107,7 +111,7 @@ window.__ModuleLoader__.load({ id: 'dsh-__ENGINE__', factory: require => {
         function urlFor(project, kind, extra = {}) { const url = new URL(route, document.baseURI); url.search = new URLSearchParams({ id: project.id, kind, ...extra }); return url.href; }
         function Workbench({locale,workbench=false}={}) {
             const [editorTab,setEditorTab]=useState('content'),[libraryTab,setLibraryTab]=useState('projects'),[editorMode,setEditorMode]=useState('director');const controlId=React.useId();
-            const [lang, setLang] = useState('zh'), [projects, setProjects] = useState([]), [archived, setArchived] = useState([]), [corruptedCount, setCorruptedCount] = useState(0), [archiveReview, setArchiveReview] = useState(false), [archiveTarget, setArchiveTarget] = useState(null), [environment, setEnvironment] = useState(null), [templates, setTemplates] = useState([]);
+            const [lang, setLang] = useState('zh'), [projects, setProjects] = useState([]), [archived, setArchived] = useState([]), [corruptedCount, setCorruptedCount] = useState(0), [archiveReview, setArchiveReview] = useState(false), [archiveTarget, setArchiveTarget] = useState(null), [trashTarget, setTrashTarget] = useState(null), [environment, setEnvironment] = useState(null), [templates, setTemplates] = useState([]);
             const initialFields = cache.fields || empty();
             const [project, setProject] = useState(cache.project), [fields, setFields] = useState(initialFields), [durationText, setDurationText] = useState(String(initialFields.duration ?? 8)), [durationTouched, setDurationTouched] = useState(false), [dirty, setDirty] = useState(cache.dirty), [creating, setCreating] = useState(cache.creating);
             const [job, setJob] = useState(cache.job), [busy, setBusy] = useState(false), [error, setError] = useState(''), [notice, setNotice] = useState(''), [pending, setPending] = useState(null), [conflict, setConflict] = useState(false), [exportReview, setExportReview] = useState(false);
@@ -166,6 +170,33 @@ __stardustUpdatesGuard(React, "dsh-__ENGINE__", { dirty, busy: busy || activeJob
             }
             useEffect(() => { refresh().catch(e => setError(e)); }, []);
             useEffect(() => {
+                if (project || creating || archiveTarget || trashTarget)
+                    return;
+                let inflight = false, cancelled = false;
+                function syncLibrary() {
+                    if (cancelled || inflight || busyRef.current || (typeof document !== 'undefined' && document.visibilityState === 'hidden'))
+                        return;
+                    inflight = true;
+                    refresh().catch(() => { /* silent background sync */ }).finally(() => { inflight = false; });
+                }
+                const onFocus = () => syncLibrary();
+                const onVisibility = () => { if (typeof document === 'undefined' || document.visibilityState !== 'hidden') syncLibrary(); };
+                if (typeof window !== 'undefined' && window.addEventListener)
+                    window.addEventListener('focus', onFocus);
+                if (typeof document !== 'undefined' && document.addEventListener)
+                    document.addEventListener('visibilitychange', onVisibility);
+                const timer = typeof setInterval === 'function' ? setInterval(syncLibrary, 8000) : null;
+                timer?.unref?.();
+                return () => {
+                    cancelled = true;
+                    if (timer != null && typeof clearInterval === 'function') clearInterval(timer);
+                    if (typeof window !== 'undefined' && window.removeEventListener)
+                        window.removeEventListener('focus', onFocus);
+                    if (typeof document !== 'undefined' && document.removeEventListener)
+                        document.removeEventListener('visibilitychange', onVisibility);
+                };
+            }, [!!project, creating, !!archiveTarget, !!trashTarget]);
+            useEffect(() => {
                 if (!job || job.state !== 'running')
                     return;
                 let live = true, polling = false, consecutiveFailures = 0;
@@ -212,7 +243,18 @@ __stardustUpdatesGuard(React, "dsh-__ENGINE__", { dirty, busy: busy || activeJob
                 busyRef.current = false;
                 setBusy(false);
             } }
-            async function open(id) { const next = await api({ action: 'get', id }); setProject(next); syncFields(fieldsOf(next)); setCreating(false); setDirty(false); setConflict(false); setPending(null); setArchiveReview(false); }
+            async function open(id) {
+                try {
+                    const next = await api({ action: 'get', id });
+                    setProject(next); syncFields(fieldsOf(next)); setCreating(false); setDirty(false); setConflict(false); setPending(null); setArchiveReview(false);
+                } catch (e) {
+                    if (e?.status === 404 || e?.code === 'PROJECT_NOT_FOUND') {
+                        await refresh().catch(() => {});
+                        if (latest.current.project?.id === id) { setProject(null); setCreating(false); setDirty(false); }
+                    }
+                    throw e;
+                }
+            }
             function navigate(target) { if (dirty) {
                 setPending(target);
                 return;
@@ -263,7 +305,16 @@ __stardustUpdatesGuard(React, "dsh-__ENGINE__", { dirty, busy: busy || activeJob
                 throw new Error(t('请先保存修改。', 'Save changes first.')); setJob(await api({ action, id: project?.id, revision: project?.revision })); }); }
             async function archiveProject(target = project) {
                 if (!target) return;
-                await api({ action: 'archive', id: target.id, revision: target.revision, confirmed: true });
+                try {
+                    await api({ action: 'archive', id: target.id, revision: target.revision, confirmed: true });
+                } catch (e) {
+                    if (e?.status === 404 || e?.code === 'PROJECT_NOT_FOUND') {
+                        setArchiveReview(false); setArchiveTarget(null);
+                        if (project?.id === target.id) { setProject(null); setCreating(false); setDirty(false); }
+                        await refresh().catch(() => {});
+                    }
+                    throw e;
+                }
                 setArchiveReview(false);
                 setArchiveTarget(null);
                 if (project?.id === target.id) {
@@ -273,6 +324,32 @@ __stardustUpdatesGuard(React, "dsh-__ENGINE__", { dirty, busy: busy || activeJob
                 }
                 await refresh();
                 setNotice(t('工程已归档，素材和成品均保留，可在下方恢复。', 'Project archived. Media and output are preserved; restore it below.'));
+            }
+            async function trashProject(target = trashTarget) {
+                if (!target?.project) return;
+                const row = target.project;
+                let alreadyMissing = false;
+                try {
+                    await api({ action: 'trash', id: row.id, revision: row.revision, archived: Boolean(target.archived), confirmed: true });
+                } catch (e) {
+                    if (e?.status === 404 || e?.code === 'PROJECT_NOT_FOUND') {
+                        alreadyMissing = true;
+                    } else {
+                        throw e;
+                    }
+                }
+                setTrashTarget(null);
+                setArchiveReview(false);
+                setArchiveTarget(null);
+                if (project?.id === row.id) {
+                    setProject(null);
+                    setCreating(false);
+                    setDirty(false);
+                }
+                await refresh().catch(() => {});
+                setNotice(alreadyMissing
+                    ? t('原工程目录已不存在，已从列表清理。', 'Project folder was already missing on disk; removed the stale entry from the list.')
+                    : t('工程已移入系统回收站，可在系统回收站还原。', 'Project moved to the system Recycle Bin. Restore it from your OS Recycle Bin if needed.'));
             }
             const render=project?.renders?.[0],stale=render && (dirty || render.revision!==project.revision);
             const durationValid = Number.isInteger(fields.duration) && fields.duration >= 3 && fields.duration <= 30;
@@ -392,8 +469,8 @@ __stardustUpdatesGuard(React, "dsh-__ENGINE__", { dirty, busy: busy || activeJob
  h('details',null,h('summary',null,t('查看运行记录','Show job log')),h('pre',null,job.lines.join('\n')))) : null,
  h('div',{key:(project||creating?'ed:':'lib:')+activeViewTab,className:'w-tab-panel dsh-tab-panel','data-dsh-tab-panel':'',role:'tabpanel'},
  !project && !creating ? libraryTab === 'environment' ? h(MediaEnvironment,{engine,environment,activeJob,job,busy,start,t}) : libraryTab === 'archives' ? archived.length ? h('section',{className:'media-project-list'},h('p', { className: 'muted' }, t('归档保留素材与成品，不占当前 30 个工程名额。恢复后可以继续编辑。', 'Archives retain media and output, freeing an active project slot. Restore to edit again.')),
-h(ProjectLibrary,{items:archived,scope:'archives',language:lang,t,searchHint:t('搜索归档工程','Search archived projects'),searchText:p=>[p.title,p.body,p.template].join(' '),updatedAt:p=>p.updated,renderItem:p=>h('div', { className: 'bar dsh-row', 'data-dsh-row': '', 'data-dsh-card': '', key: p.id }, h('strong', { 'data-dsh-serif': '' }, p.title), h('div', { className: 'dsh-row-actions', 'data-window-drag-exclude': '' }, h(W.Button, { icon: 'reply', disabled: busy || dirty || activeJob, onClick: () => perform(async () => { await api({ action: 'restore', id: p.id, revision: p.revision, confirmed: true }); await refresh(); await open(p.id); setNotice(t('工程已恢复。', 'Project restored.')); }) }, t('恢复工程', 'Restore project'))))})) : h(W.Empty,{title:t('没有归档工程','No archived projects'),icon:'folder'}) : projects.length ? h('div',{className:'media-project-list','data-tour':'media-projects'},h(ProjectLibrary,{items:projects,language:lang,t,searchHint:t('搜索标题、正文或模板','Search titles, text or templates'),searchText:p=>[p.title,p.body,p.template,templates.find(row=>row.id===p.template)?.[lang==='en'?'en':'zh']].join(' '),updatedAt:p=>p.updated,renderItem:p=>h(W.Row,{key:p.id,title:p.title,disabled:running,meta:p.duration+t(' 秒 · 修订 ',' sec · revision ')+p.revision,description:(templates.find(row=>row.id===p.template)?.[lang==='en'?'en':'zh'] || p.template),actions:h(React.Fragment,null,h(W.Button,{size:'sm',icon:'edit',disabled:running,onClick:()=>{setEditorTab('content');navigate(p.id);}},t('编辑','Open')),h(W.Button,{size:'sm',variant:'ghost',icon:'folder',disabled:busy||dirty||activeJob,onClick:()=>setArchiveTarget(p)},t('归档','Archive'))),onClick:()=>{setEditorTab('content');navigate(p.id);}})})) : h(W.Empty,{title:t('还没有视频工程','No video projects yet'),icon:'video',action:h(W.Button,{variant:'primary',icon:'plus',disabled:running,onClick:()=>navigate('new')},t('新建视频','New video'))},t('点击“新建视频”，选择模板并保存。环境可以稍后准备。','Choose New video, select a template and save. The renderer can be prepared later.')) :
- editorTab === 'environment' ? h(MediaEnvironment,{engine,environment,activeJob,job,busy,start,t}) : editorTab === 'assets' ? h(MediaAssets,{project,dirty,running,fileRef,upload,perform,setProject,t}) : editorTab === 'exports' ? h(MediaExports,{project,dirty,running,activeJob,busy,setArchiveReview,t}) :
+h(ProjectLibrary,{items:archived,scope:'archives',language:lang,t,searchHint:t('搜索归档工程','Search archived projects'),searchText:p=>[p.title,p.body,p.template].join(' '),updatedAt:p=>p.updated,renderItem:p=>h('div', { className: 'bar dsh-row', 'data-dsh-row': '', 'data-dsh-card': '', key: p.id }, h('strong', { 'data-dsh-serif': '' }, p.title), h('div', { className: 'dsh-row-actions', 'data-window-drag-exclude': '' }, h(W.Button, { icon: 'reply', disabled: busy || dirty || activeJob, onClick: () => perform(async () => { try { await api({ action: 'restore', id: p.id, revision: p.revision, confirmed: true }); } catch (e) { if (e?.status === 404 || e?.code === 'PROJECT_NOT_FOUND') await refresh().catch(() => {}); throw e; } await refresh(); await open(p.id); setNotice(t('工程已恢复。', 'Project restored.')); }) }, t('恢复工程', 'Restore project')), h(W.Button, { variant: 'danger', icon: 'trash', disabled: busy || dirty || activeJob, onClick: () => setTrashTarget({ project: p, archived: true }) }, t('移入回收站', 'Move to Recycle Bin'))))})) : h(W.Empty,{title:t('没有归档工程','No archived projects'),icon:'folder'}) : projects.length ? h('div',{className:'media-project-list','data-tour':'media-projects'},h(ProjectLibrary,{items:projects,language:lang,t,searchHint:t('搜索标题、正文或模板','Search titles, text or templates'),searchText:p=>[p.title,p.body,p.template,templates.find(row=>row.id===p.template)?.[lang==='en'?'en':'zh']].join(' '),updatedAt:p=>p.updated,renderItem:p=>h(W.Row,{key:p.id,title:p.title,disabled:running,meta:p.duration+t(' 秒 · 修订 ',' sec · revision ')+p.revision,description:(templates.find(row=>row.id===p.template)?.[lang==='en'?'en':'zh'] || p.template),actions:h(React.Fragment,null,h(W.Button,{size:'sm',icon:'edit',disabled:running,onClick:()=>{setEditorTab('content');navigate(p.id);}},t('编辑','Open')),h(W.Button,{size:'sm',variant:'ghost',icon:'folder',disabled:busy||dirty||activeJob,onClick:()=>setArchiveTarget(p)},t('归档','Archive')),h(W.Button,{size:'sm',variant:'ghost',icon:'trash',disabled:busy||dirty||activeJob,onClick:()=>setTrashTarget({project:p,archived:false})},t('移入回收站','Trash'))),onClick:()=>{setEditorTab('content');navigate(p.id);}})})) : h(W.Empty,{title:t('还没有视频工程','No video projects yet'),icon:'video',action:h(W.Button,{variant:'primary',icon:'plus',disabled:running,onClick:()=>navigate('new')},t('新建视频','New video'))},t('点击“新建视频”，选择模板并保存。环境可以稍后准备。','Choose New video, select a template and save. The renderer can be prepared later.')) :
+ editorTab === 'environment' ? h(MediaEnvironment,{engine,environment,activeJob,job,busy,start,t}) : editorTab === 'assets' ? h(MediaAssets,{project,dirty,running,fileRef,upload,perform,setProject,t}) : editorTab === 'exports' ? h(MediaExports,{project,dirty,running,activeJob,busy,setArchiveReview,onTrash:()=>setTrashTarget({project,archived:false}),t}) :
  h(React.Fragment,null,
   h('div',{className:'media-console-bar'},
    h('div',{className:'media-console-id'},
@@ -424,7 +501,11 @@ h('div',{className:'media-field'},h('label', { htmlFor: controlId+'-duration' },
 conflict ? h(W.Status, { tone: 'error' }, t('此工程已在别处更新，直接保存会再次冲突。请选择放弃修改并载入最新版本，或留在当前复制需要的输入。', 'This project changed elsewhere, so saving again would conflict. Discard and load the latest revision, or stay here to copy your input.')) : null,
  h('div', { className: 'w-toolbar' }, h(W.Button, { variant: 'primary', icon: 'check', disabled: running || conflict, title: conflict ? t('工程已更新，无法直接保存。', 'The project changed, so saving is blocked.') : undefined, onClick: () => perform(async () => { await save(); await move(pending); }) }, t('保存后继续', 'Save and continue')), h(W.Button, { icon: 'close', disabled: running, onClick: () => perform(() => move(pending)) }, t('放弃修改并继续', 'Discard and continue')), h(W.Button, { variant: 'ghost', onClick: () => setPending(null) }, t('留在当前', 'Stay here')))) : null,
  (archiveTarget || (project && archiveReview)) ? h(W.Dialog,{className:'dmw media-dialog',title:t('归档此工程','Archive this project'),closeLabel:t('取消归档','Cancel archive'),busy:busy || activeJob,onClose:()=>{setArchiveReview(false);setArchiveTarget(null);}},h('p', null, t('归档后将从当前项目列表移走；工程、上传素材和已导出 MP4 全部保留，可随时恢复。未保存修改需先处理。', 'Archiving removes this project from the active list. The project, uploaded media and exported MP4s are preserved and can be restored. Save or discard pending edits first.')),
-h('div', { className: 'w-toolbar' }, h(W.Button, { variant: 'primary', icon: 'folder', disabled: busy || dirty || activeJob, onClick: () => perform(() => archiveProject(archiveTarget || project)) }, t('确认归档', 'Confirm archive')), h(W.Button, { disabled: busy, onClick: () => {setArchiveReview(false);setArchiveTarget(null);} }, t('取消归档', 'Cancel archive')))) : null);
+h('div', { className: 'w-toolbar' }, h(W.Button, { variant: 'primary', icon: 'folder', disabled: busy || dirty || activeJob, onClick: () => perform(() => archiveProject(archiveTarget || project)) }, t('确认归档', 'Confirm archive')), h(W.Button, { disabled: busy, onClick: () => {setArchiveReview(false);setArchiveTarget(null);} }, t('取消归档', 'Cancel archive')))) : null,
+ trashTarget ? h(W.Dialog,{className:'dmw media-dialog',title:t('移入系统回收站','Move project to Recycle Bin'),closeLabel:t('取消','Cancel'),busy:busy || activeJob,onClose:()=>setTrashTarget(null)},
+  h('p', null, h('strong', null, trashTarget.project.title)),
+  h('p', { className: 'w-muted' }, t('将把该工程目录（含工程配置、已上传素材副本和已导出 MP4）移入系统回收站，可在系统回收站中还原；未保存修改需先处理。', 'Moves this project folder (settings, uploaded media copies and exported MP4s) to the system Recycle Bin / Trash so you can restore it later. Save or discard pending edits first.')),
+  h('div', { className: 'w-toolbar' }, h(W.Button, { variant: 'danger', icon: 'trash', disabled: busy || dirty || activeJob, onClick: () => perform(() => trashProject(trashTarget)) }, t('确认移入回收站', 'Move to Recycle Bin')), h(W.Button, { disabled: busy, onClick: () => setTrashTarget(null) }, t('取消', 'Cancel')))) : null);
         }
         function apply(ctx) { let locale; try {
             locale = ctx.get?.('locale') || ctx.locale;

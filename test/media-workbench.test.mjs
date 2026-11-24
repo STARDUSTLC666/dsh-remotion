@@ -43,8 +43,8 @@ test('archiving is reversible, preserves media and rendered bytes, and requires 
   assert.equal(await readFile(join(runDir,'final.mp4'),'utf8'),'preserved rendered bytes')
   assert.equal((await request(w,{action:'archive',id:'../../outside',revision:1,confirmed:true})).status,400)
 })
-async function fixture(t, engine = 'remotion') {
-  const root = await mkdtemp(join(testRoot, '.media-fixture-')), workbench = new MediaWorkbench(engine, root)
+async function fixture(t, engine = 'remotion', options = undefined) {
+  const root = await mkdtemp(join(testRoot, '.media-fixture-')), workbench = new MediaWorkbench(engine, root, options)
   t.after(async () => { workbench.dispose(); for (let i = 0; i < 100 && [...workbench.jobs.values()].some(j => j.view.state === 'running'); i++) await new Promise(r => setTimeout(r, 20)); const rel = relative(resolve(testRoot), resolve(root)); assert.ok(rel && !rel.startsWith('..') && !isAbsolute(rel)); await rm(root, { recursive: true, force: true }) })
   return { root, store: workbench.store, workbench }
 }
@@ -441,4 +441,74 @@ test('tool output includes recent error logs on failure and output path on done;
   const doneText = renderTool.output.render({}, { id: 'job-2', projectId: 'proj-1', state: 'done', stage: '已完成', output: 'job-2' })[0].text
   assert.match(doneText, /成品编号：job-2/)
   assert.match(doneText, /final\.mp4/)
+})
+
+test('trash moves archived and active projects to OS Recycle Bin with confirmation, revision check, active-job lock, and junction safety', async t => {
+  const trashed = []
+  const trashPath = async targetPath => {
+    trashed.push(targetPath)
+    await rm(targetPath, { recursive: true, force: true })
+    return { moved: true }
+  }
+  const { root, store, workbench: w } = await fixture(t, 'remotion', { trashPath })
+  const p1 = await store.create(fields)
+  const p2 = await store.create({ ...fields, title: '当前待清理工程' })
+  await store.archive(p1.id, p1.revision)
+
+  // Unconfirmed, wrong revision, and traversal IDs are rejected
+  assert.equal((await request(w, { action: 'trash', id: p1.id, revision: p1.revision, archived: true })).status, 400)
+  assert.equal((await request(w, { action: 'trash', id: p1.id, revision: p1.revision + 1, archived: true, confirmed: true })).status, 409)
+  assert.equal((await request(w, { action: 'trash', id: '../../outside', revision: 1, archived: true, confirmed: true })).status, 400)
+  assert.equal(trashed.length, 0)
+
+  // Archived project trash succeeds and removes it from archives
+  const archivedDir = await store.path(p1.id, true)
+  const res1 = await request(w, { action: 'trash', id: p1.id, revision: p1.revision, archived: true, confirmed: true })
+  assert.equal(res1.status, 200)
+  assert.deepEqual(trashed, [archivedDir])
+  assert.equal((await store.list(true)).length, 0)
+
+  // Active project trash is blocked while a render is running, then succeeds once cancelled
+  // Also verify any orphaned runs/<uuid>/node_modules junction is detached before trashing so shared runtime stays intact
+  const runtimeMods = join(w.runtime, 'node_modules')
+  await mkdir(runtimeMods, { recursive: true })
+  await writeFile(join(runtimeMods, 'keep.txt'), 'runtime-must-survive')
+  const orphanRun = join(await store.path(p2.id), 'runs', '11111111-1111-4111-8111-111111111111')
+  await mkdir(orphanRun, { recursive: true })
+  await symlink(runtimeMods, join(orphanRun, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir')
+
+  await fakeRuntime(w, `console.log('trash slot held');setInterval(()=>{},1000);`)
+  const render = await w.start('render', p2.id, p2.revision)
+  for (let i = 0; i < 100 && !w.job(render.id).lines.includes('trash slot held'); i++) await new Promise(r => setTimeout(r, 10))
+  const blocked = await request(w, { action: 'trash', id: p2.id, revision: p2.revision, archived: false, confirmed: true })
+  assert.equal(blocked.status, 409)
+  w.cancel(render.id)
+  await finished(w, render.id)
+
+  const activeDir = await store.path(p2.id)
+  const res2 = await request(w, { action: 'trash', id: p2.id, revision: p2.revision, archived: false, confirmed: true })
+  assert.equal(res2.status, 200)
+  assert.equal(trashed.at(-1), activeDir)
+  assert.equal((await store.list(false)).length, 0)
+  assert.equal(await readFile(join(runtimeMods, 'keep.txt'), 'utf8'), 'runtime-must-survive')
+})
+
+test('externally deleted project folders disappear on list without false corruption warnings and return 404 PROJECT_NOT_FOUND on stale open/trash', async t => {
+  const { store, workbench: w } = await fixture(t, 'hyperframes')
+  const kept = await store.create({ ...fields, title: '保留工程' })
+  const gone = await store.create({ ...fields, title: '外部删除工程' })
+  const goneDir = await store.path(gone.id)
+  await rm(goneDir, { recursive: true, force: true })
+
+  const staleGet = await request(w, { action: 'get', id: gone.id })
+  assert.equal(staleGet.status, 404)
+  assert.equal((await staleGet.json()).code, 'PROJECT_NOT_FOUND')
+
+  const staleTrash = await request(w, { action: 'trash', id: gone.id, revision: gone.revision, archived: false, confirmed: true })
+  assert.equal(staleTrash.status, 404)
+  assert.equal((await staleTrash.json()).code, 'PROJECT_NOT_FOUND')
+
+  const listed = await (await request(w, { action: 'list' })).json()
+  assert.deepEqual(listed.value.projects.map(p => p.id), [kept.id])
+  assert.equal(listed.value.corruptedCount, undefined)
 })

@@ -4,6 +4,9 @@ import { homedir } from 'node:os'
 import { join, resolve, relative, isAbsolute, extname } from 'node:path'
 import lockfile from 'proper-lockfile'
 import { MediaError, validateFields, type MediaEngine, type MediaProject, type MediaAsset } from './media-templates.js'
+import { movePathToTrash } from './trash.js'
+
+export type TrashPathFn = typeof movePathToTrash
 
 const MEDIA_ID_RE = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/
 const ASSET_EXT_RE = '(?:png|jpg|webp|mp3|wav|m4a|mp4)'
@@ -17,12 +20,25 @@ export class MediaConflict extends MediaError {
 }
 export class MediaStore {
   readonly root: string
-  constructor(engine: MediaEngine, root?: string) { this.root = resolve(root ?? join(process.env.DSH_HOME || join(homedir(), '.dsh'), 'data', 'dsh-' + engine)) }
+  private readonly trashPath: TrashPathFn
+  constructor(engine: MediaEngine, root?: string, options?: { trashPath?: TrashPathFn }) {
+    this.root = resolve(root ?? join(process.env.DSH_HOME || join(homedir(), '.dsh'), 'data', 'dsh-' + engine))
+    this.trashPath = options?.trashPath ?? movePathToTrash
+  }
   async init(): Promise<void> { await mkdir(join(this.root, 'projects'), { recursive: true, mode: 0o700 }) }
   async path(id: string, archived = false): Promise<string> {
     await this.init()
     const dir = join(this.root, archived ? 'archives' : 'projects', mediaId(id))
-    if ((await lstat(dir)).isSymbolicLink()) throw new MediaError('项目目录不能是符号链接。', 'STORAGE_UNSAFE')
+    let info
+    try {
+      info = await lstat(dir)
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException)?.code === 'ENOENT') {
+        throw new MediaError('工程不存在或原目录已被移除，列表已自动同步。', 'PROJECT_NOT_FOUND', 404)
+      }
+      throw error
+    }
+    if (info.isSymbolicLink()) throw new MediaError('项目目录不能是符号链接。', 'STORAGE_UNSAFE')
     await this.checkPath(dir)
     return dir
   }
@@ -31,8 +47,16 @@ export class MediaStore {
     if (rel === '..' || rel.startsWith('..' + (process.platform === 'win32' ? '\\' : '/')) || isAbsolute(rel)) throw new MediaError('文件不在本插件项目目录内。', 'STORAGE_UNSAFE')
   }
   async get(id: string, archived = false): Promise<MediaProject> {
-    const file = join(await this.path(id, archived), 'project.json'); await this.checkPath(file)
-    if ((await stat(file)).size > 65536) throw new MediaError('工程记录过大，请保留文件后检查。', 'PROJECT_CORRUPT')
+    const file = join(await this.path(id, archived), 'project.json')
+    try {
+      await this.checkPath(file)
+      if ((await stat(file)).size > 65536) throw new MediaError('工程记录过大，请保留文件后检查。', 'PROJECT_CORRUPT')
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException)?.code === 'ENOENT') {
+        throw new MediaError('工程不存在或原文件已被移除，列表已自动同步。', 'PROJECT_NOT_FOUND', 404)
+      }
+      throw error
+    }
     const p = JSON.parse(await readFile(file, 'utf8')) as MediaProject
     validateFields(p)
     if (p.id !== id || !Number.isInteger(p.revision) || p.revision < 1 || !Array.isArray(p.assets) || p.assets.length > 12 || !Array.isArray(p.renders)) throw new MediaError('工程记录损坏；原文件已保留。', 'PROJECT_CORRUPT')
@@ -54,8 +78,11 @@ export class MediaStore {
       for (let j = 0; j < settled.length; j++) {
         const outcome = settled[j]
         if (outcome.status === 'fulfilled') projects.push(outcome.value)
-        else if ((outcome.reason as NodeJS.ErrnoException)?.code !== 'ENOENT') {
-          corrupted.push({ id: batch[j], detail: outcome.reason instanceof Error ? outcome.reason.message : String(outcome.reason) })
+        else {
+          const reasonCode = (outcome.reason as { code?: string } | undefined)?.code
+          if (reasonCode !== 'ENOENT' && reasonCode !== 'PROJECT_NOT_FOUND') {
+            corrupted.push({ id: batch[j], detail: outcome.reason instanceof Error ? outcome.reason.message : String(outcome.reason) })
+          }
         }
       }
     }
@@ -83,6 +110,35 @@ export class MediaStore {
       await rename(source, target)
       return p
     } finally { if (release) await release(); await unlock() }
+  }
+  /** Move a managed project directory (active or archived) into the OS Recycle Bin / Trash. */
+  async trash(id: string, revision: unknown, archived = true): Promise<MediaProject> {
+    await this.init()
+    const unlock = await lockfile.lock(join(this.root, 'projects'), { retries: { retries: 8, minTimeout: 30, maxTimeout: 60 } })
+    let release: (() => Promise<void>) | undefined
+    try {
+      const source = await this.path(id, archived)
+      release = await lockfile.lock(source, { retries: { retries: 8, minTimeout: 30, maxTimeout: 60 } })
+      const p = await this.get(id, archived)
+      if (revision !== p.revision) throw new MediaConflict('工程已更新，请重新读取后再移入回收站。')
+      // Detach any leftover run node_modules symlink/junction before trashing so shared runtime files are never touched.
+      const runsDir = join(source, 'runs')
+      const runEntries = await readdir(runsDir).catch(() => [])
+      for (const runId of runEntries) {
+        if (!MEDIA_ID_RE.test(runId)) continue
+        const linkPath = join(runsDir, runId, 'node_modules')
+        const linkInfo = await lstat(linkPath).catch(() => null)
+        if (linkInfo?.isSymbolicLink()) await unlink(linkPath).catch(() => {})
+      }
+      // Release the per-project lock before handing the directory to the OS Recycle Bin (prevents Windows handle/lock conflicts).
+      await release()
+      release = undefined
+      await this.trashPath(source)
+      return p
+    } finally {
+      if (release) await release().catch(() => {})
+      await unlock()
+    }
   }
   private async write(p: MediaProject): Promise<void> {
     const dir = await this.path(p.id), temp = join(dir, randomUUID() + '.tmp')

@@ -9,7 +9,7 @@ import { Readable } from 'node:stream'
 import { StringDecoder } from 'node:string_decoder'
 import lockfile from 'proper-lockfile'
 import { zip, strToU8, type AsyncZippable } from 'fflate'
-import { MediaStore, mediaId, MediaConflict } from './media-store.js'
+import { MediaStore, mediaId, MediaConflict, type TrashPathFn } from './media-store.js'
 import { MediaError, MEDIA_VERSIONS, MEDIA_TEMPLATES, projectSources, type MediaEngine, type MediaProject } from './media-templates.js'
 import { resolveNpmCli } from './npm-cli.js'
 
@@ -66,7 +66,7 @@ export class MediaWorkbench {
   private jobs = new Map<string, RunningJob>()
   private starting = new Set<MediaJob['kind']>()
   private disposed = false
-  constructor(readonly engine: MediaEngine, root?: string) { this.store = new MediaStore(engine, root); this.route = '/api/dsh-' + engine + '/workbench'; this.runtime = join(this.store.root, 'runtime') }
+  constructor(readonly engine: MediaEngine, root?: string, options?: { trashPath?: TrashPathFn }) { this.store = new MediaStore(engine, root, options); this.route = '/api/dsh-' + engine + '/workbench'; this.runtime = join(this.store.root, 'runtime') }
   private explicitBrowserEnv(): string {
     return (this.engine === 'hyperframes' ? process.env.HYPERFRAMES_BROWSER_PATH : process.env.REMOTION_BROWSER_EXECUTABLE)?.trim() || ''
   }
@@ -475,6 +475,21 @@ export class MediaWorkbench {
               throw error
             })
             try { value = await this.store.archive(mediaId(v.id), v.revision, v.action === 'restore') } finally { await unlock() }
+            break
+          }
+          case 'trash': {
+            if (v.confirmed !== true) throw new MediaError('请明确确认移入系统回收站。', 'CONFIRM_REQUIRED')
+            const id = mediaId(v.id)
+            const archived = v.archived !== false
+            if ([...this.jobs.values()].some(j => j.view.state === 'running' && (j.view.kind === 'prepare' || j.view.projectId === id))) {
+              throw new MediaConflict('已有预览或渲染正在运行，请先关闭预览或取消渲染，再移入系统回收站。')
+            }
+            const slot = join(this.store.root, 'workbench-slot'); await this.store.init(); await mkdir(slot, { recursive: true })
+            const unlock = await lockfile.lock(slot, { retries: 0, stale: 30000, update: 10000 }).catch(error => {
+              if (error.code === 'ELOCKED') throw new MediaConflict('已有预览或渲染正在运行，请先关闭预览或取消渲染，再移入系统回收站。')
+              throw error
+            })
+            try { value = await this.store.trash(id, v.revision, archived) } finally { await unlock() }
             break
           }
           case 'prepare': value = await this.start('prepare'); break

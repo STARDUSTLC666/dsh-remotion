@@ -459,7 +459,7 @@ function MediaAssets({ project, dirty, running, fileRef, upload, perform, setPro
     remove ? h(W.Dialog, { className: 'dmw media-dialog', title: t('移除素材副本', 'Remove media copy'), closeLabel: t('取消', 'Cancel'), busy: running, onClose: () => setRemove(null) }, h('p', null, remove.name), h('p', { className: 'w-muted' }, t('仅移除本工程中的上传副本，原文件保留。', 'Only the uploaded project copy is removed. Your original file is preserved.')), h('div', { className: 'w-toolbar' }, h(W.Button, { variant: 'danger', icon: 'trash', disabled: running || dirty, onClick: () => perform(async () => { setProject(await api({ action: 'removeAsset', id: project.id, revision: project.revision, asset: remove.id })); setRemove(null); }) }, t('确认移除副本', 'Confirm removal')), h(W.Button, { disabled: running, onClick: () => setRemove(null) }, t('取消', 'Cancel')))) : null);
 }
 
-function MediaExports({ project, dirty, running, activeJob, busy, setArchiveReview, t }) {
+function MediaExports({ project, dirty, running, activeJob, busy, setArchiveReview, onTrash, t }) {
   if (!project) return h(W.Empty, { title: t('工程尚未保存', 'Project not saved yet'), icon: 'video' }, t('保存后才能导出视频和可编辑工程。', 'Save the project to export video and editable source.'));
   return h('section', { className: 'media-exports-view' },
     h('h3', null, t('已导出成品', 'Exported videos')),
@@ -469,7 +469,7 @@ function MediaExports({ project, dirty, running, activeJob, busy, setArchiveRevi
       h('div', { className: 'dsh-row-actions', 'data-window-drag-exclude': '' },
         h('a', { className: 'w-button', href: urlFor(project, 'mp4', { render: render.id, download: '1' }), download: '' }, h(W.Icon, { name: 'download', size: 16 }), t('下载 MP4', 'Download MP4')))))) : h(W.Empty, { title: t('尚无 MP4 成品', 'No MP4 yet'), icon: 'video' }, t('先准备环境、保存并预览工程，再点击“导出 MP4”。', 'Prepare the renderer, save and preview the project, then choose Export MP4.')),
     h('section', { className: 'w-section' }, h('h3', null, t('工程备份', 'Editable project backup')), h('a', { className: 'w-button', href: urlFor(project, 'source'), download: '' }, h(W.Icon, { name: 'download', size: 16 }), t('下载可编辑工程', 'Download editable project'))),
-    h('section', { className: 'w-section' }, h('h3', null, t('归档', 'Archive')), h('p', { className: 'w-muted' }, t('归档保留素材与成品，不占当前 30 个工程名额。', 'Archiving preserves media and exports and frees an active project slot.')), h(W.Button, { icon: 'folder', disabled: busy || dirty || activeJob, onClick: () => setArchiveReview(true) }, t('归档此工程', 'Archive this project'))));
+    h('section', { className: 'w-section' }, h('h3', null, t('归档与移入回收站', 'Archive & Recycle Bin')), h('p', { className: 'w-muted' }, t('归档保留素材与成品，不占当前 30 个工程名额；移入回收站会将该工程目录送入系统回收站，可在系统回收站还原。', 'Archiving preserves media and exports while freeing a slot; moving to the Recycle Bin sends the project folder to your OS Recycle Bin where it can be restored.')), h('div', { className: 'w-toolbar' }, h(W.Button, { icon: 'folder', disabled: busy || dirty || activeJob, onClick: () => setArchiveReview(true) }, t('归档此工程', 'Archive this project')), onTrash ? h(W.Button, { variant: 'danger', icon: 'trash', disabled: busy || dirty || activeJob, onClick: onTrash }, t('移入回收站', 'Move to Recycle Bin')) : null)));
 }
 
 const MEDIA_WORKBENCH_CSS = `
