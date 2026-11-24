@@ -1,5 +1,12 @@
 # 更新记录
 
+## 0.13.3 (2026-11-24)
+
+- **损坏目录清理与一键清空已归档**：黄色损坏工程提示条新增 **「查看并移入回收站清理」** 入口与确认弹窗（`trashCorrupted`），后端二次校验仅清理真实损坏目录并拒绝完好工程（`PROJECT_NOT_CORRUPT`）；「已归档」页新增 **「清空已归档（全部移入回收站）」**（`trashArchived`），支持单次批量移入系统回收站并自动分离残留 `runs/*/node_modules` 联接（与 `dsh-hyperframes` 共享源保持完全同步）。
+- **Windows 单进程批量回收站加速与弹窗布局修复**：升级 `movePathsToTrash` 在 Windows 下以单进程对象列表批量移入回收站并拦截 UNC 网络路径，同时修复回退模态框 `container-type: inline-size` 宽度塌缩问题。
+- **Corrupted folder cleanup & clear-all archived**: add **Inspect & move to Recycle Bin** (`trashCorrupted`, refusing healthy projects with `PROJECT_NOT_CORRUPT`) on the warning banner and **Clear archived (Recycle Bin)** (`trashArchived`) on the Archived tab, detaching leftover run junctions before batching into one OS Recycle Bin call (synced with `dsh-hyperframes`).
+- **Single-process Windows Recycle Bin batching & modal layout fix**: batch multiple directories in one PowerShell process with UNC path rejection, and fix fallback modal `0px` inline-size collapse.
+
 ## 0.13.2 (2026-11-24)
 
 - 活跃工程列表、已归档列表及导出页新增 **「移入回收站」** 操作与确认弹窗（`trash`）：采用零依赖跨平台系统回收站（Windows / macOS / Linux），执行修订号校验、运行任务互斥锁（`workbench-slot`）、先释放目录锁并剥离残留 `runs/*/node_modules` 联接，与 `dsh-hyperframes` 共享媒体引擎保持完全同步。

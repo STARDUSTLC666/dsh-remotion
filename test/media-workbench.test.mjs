@@ -512,3 +512,92 @@ test('externally deleted project folders disappear on list without false corrupt
   assert.deepEqual(listed.value.projects.map(p => p.id), [kept.id])
   assert.equal(listed.value.corruptedCount, undefined)
 })
+
+test('trashArchived batches all archived projects in one call, requires confirmation, blocks during active render, and detaches junctions', async t => {
+  const batches = []
+  const trashPaths = async targetPaths => {
+    batches.push([...targetPaths])
+    for (const p of targetPaths) await rm(p, { recursive: true, force: true })
+    return { moved: [...targetPaths], missing: [] }
+  }
+  const { store, workbench: w } = await fixture(t, 'remotion', { trashPaths })
+  const a1 = await store.create({ ...fields, title: '归档工程一' })
+  const a2 = await store.create({ ...fields, title: '归档工程二' })
+  const active = await store.create({ ...fields, title: '活跃保留工程' })
+  await store.archive(a1.id, a1.revision)
+  await store.archive(a2.id, a2.revision)
+
+  // Unconfirmed request rejected
+  assert.equal((await request(w, { action: 'trashArchived' })).status, 400)
+  assert.equal(batches.length, 0)
+
+  // Attach an orphaned node_modules junction inside an archived run to ensure runtime survives
+  const runtimeMods = join(w.runtime, 'node_modules')
+  await mkdir(runtimeMods, { recursive: true })
+  await writeFile(join(runtimeMods, 'keep.txt'), 'runtime-safe')
+  const orphanRun = join(await store.path(a1.id, true), 'runs', '22222222-2222-4222-8222-222222222222')
+  await mkdir(orphanRun, { recursive: true })
+  await symlink(runtimeMods, join(orphanRun, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir')
+
+  // Blocked while an active render is running
+  await fakeRuntime(w, `console.log('clear archived blocked');setInterval(()=>{},1000);`)
+  const render = await w.start('render', active.id, active.revision)
+  for (let i = 0; i < 100 && !w.job(render.id).lines.includes('clear archived blocked'); i++) await new Promise(r => setTimeout(r, 10))
+  assert.equal((await request(w, { action: 'trashArchived', confirmed: true })).status, 409)
+  w.cancel(render.id)
+  await finished(w, render.id)
+
+  const res = await request(w, { action: 'trashArchived', confirmed: true })
+  assert.equal(res.status, 200)
+  const payload = await res.json()
+  assert.equal(payload.value.trashedCount, 2)
+  assert.equal(batches.length, 1, 'all archived project folders must be batched into one movePathsToTrash call')
+  assert.equal(batches[0].length, 2)
+  assert.equal((await store.list(true)).length, 0)
+  assert.deepEqual((await store.list(false)).map(p => p.id), [active.id])
+  assert.equal(await readFile(join(runtimeMods, 'keep.txt'), 'utf8'), 'runtime-safe')
+})
+
+test('trashCorrupted exposes corruptedProjects in list, refuses healthy projects, and cleans damaged folders in one batch', async t => {
+  const batches = []
+  const trashPaths = async targetPaths => {
+    batches.push([...targetPaths])
+    for (const p of targetPaths) await rm(p, { recursive: true, force: true })
+    return { moved: [...targetPaths], missing: [] }
+  }
+  const { store, workbench: w } = await fixture(t, 'hyperframes', { trashPaths })
+  const healthy = await store.create({ ...fields, title: '完好工程' })
+  const brokenActive = await store.create({ ...fields, title: '损坏活跃工程' })
+  const brokenArchived = await store.create({ ...fields, title: '损坏归档工程' })
+  await store.archive(brokenArchived.id, brokenArchived.revision)
+
+  await writeFile(join(await store.path(brokenActive.id, false), 'project.json'), '{broken-json')
+  await writeFile(join(await store.path(brokenArchived.id, true), 'project.json'), '{broken-archived')
+
+  // list reports corruptedCount + corruptedProjects with archived flag
+  const before = await (await request(w, { action: 'list' })).json()
+  assert.equal(before.value.corruptedCount, 2)
+  assert.equal(before.value.corruptedProjects.length, 2)
+  assert.ok(before.value.corruptedProjects.some(c => c.id === brokenActive.id && c.archived === false))
+  assert.ok(before.value.corruptedProjects.some(c => c.id === brokenArchived.id && c.archived === true))
+
+  // Unconfirmed rejected; attempting to pass a healthy project ID is refused with PROJECT_NOT_CORRUPT
+  assert.equal((await request(w, { action: 'trashCorrupted' })).status, 400)
+  const refuseHealthy = await request(w, { action: 'trashCorrupted', confirmed: true, items: [{ id: healthy.id, archived: false }] })
+  assert.equal(refuseHealthy.status, 400)
+  assert.equal((await refuseHealthy.json()).code, 'PROJECT_NOT_CORRUPT')
+  assert.equal(batches.length, 0)
+
+  // Confirmed cleanup moves both corrupted folders in one batch and clears the warning
+  const res = await request(w, { action: 'trashCorrupted', confirmed: true })
+  assert.equal(res.status, 200)
+  const payload = await res.json()
+  assert.equal(payload.value.trashedCount, 2)
+  assert.equal(batches.length, 1)
+  assert.equal(batches[0].length, 2)
+
+  const after = await (await request(w, { action: 'list' })).json()
+  assert.equal(after.value.corruptedCount, undefined)
+  assert.equal(after.value.corruptedProjects, undefined)
+  assert.deepEqual(after.value.projects.map(p => p.id), [healthy.id])
+})

@@ -4,9 +4,10 @@ import { homedir } from 'node:os'
 import { join, resolve, relative, isAbsolute, extname } from 'node:path'
 import lockfile from 'proper-lockfile'
 import { MediaError, validateFields, type MediaEngine, type MediaProject, type MediaAsset } from './media-templates.js'
-import { movePathToTrash } from './trash.js'
+import { movePathToTrash, movePathsToTrash } from './trash.js'
 
 export type TrashPathFn = typeof movePathToTrash
+export type TrashPathsFn = typeof movePathsToTrash
 
 const MEDIA_ID_RE = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/
 const ASSET_EXT_RE = '(?:png|jpg|webp|mp3|wav|m4a|mp4)'
@@ -20,10 +21,34 @@ export class MediaConflict extends MediaError {
 }
 export class MediaStore {
   readonly root: string
-  private readonly trashPath: TrashPathFn
-  constructor(engine: MediaEngine, root?: string, options?: { trashPath?: TrashPathFn }) {
+  private readonly customTrashPath?: TrashPathFn
+  private readonly customTrashPaths?: TrashPathsFn
+  constructor(engine: MediaEngine, root?: string, options?: { trashPath?: TrashPathFn; trashPaths?: TrashPathsFn }) {
     this.root = resolve(root ?? join(process.env.DSH_HOME || join(homedir(), '.dsh'), 'data', 'dsh-' + engine))
-    this.trashPath = options?.trashPath ?? movePathToTrash
+    this.customTrashPath = options?.trashPath
+    this.customTrashPaths = options?.trashPaths
+  }
+  private async trashDirs(dirs: string[]): Promise<void> {
+    if (dirs.length === 0) return
+    if (this.customTrashPaths) {
+      await this.customTrashPaths(dirs)
+      return
+    }
+    if (this.customTrashPath) {
+      for (const dir of dirs) await this.customTrashPath(dir)
+      return
+    }
+    await movePathsToTrash(dirs)
+  }
+  private async detachRunJunctions(dir: string): Promise<void> {
+    const runsDir = join(dir, 'runs')
+    const runEntries = await readdir(runsDir).catch(() => [])
+    for (const runId of runEntries) {
+      if (!MEDIA_ID_RE.test(runId)) continue
+      const linkPath = join(runsDir, runId, 'node_modules')
+      const linkInfo = await lstat(linkPath).catch(() => null)
+      if (linkInfo?.isSymbolicLink()) await unlink(linkPath).catch(() => {})
+    }
   }
   async init(): Promise<void> { await mkdir(join(this.root, 'projects'), { recursive: true, mode: 0o700 }) }
   async path(id: string, archived = false): Promise<string> {
@@ -122,21 +147,99 @@ export class MediaStore {
       const p = await this.get(id, archived)
       if (revision !== p.revision) throw new MediaConflict('工程已更新，请重新读取后再移入回收站。')
       // Detach any leftover run node_modules symlink/junction before trashing so shared runtime files are never touched.
-      const runsDir = join(source, 'runs')
-      const runEntries = await readdir(runsDir).catch(() => [])
-      for (const runId of runEntries) {
-        if (!MEDIA_ID_RE.test(runId)) continue
-        const linkPath = join(runsDir, runId, 'node_modules')
-        const linkInfo = await lstat(linkPath).catch(() => null)
-        if (linkInfo?.isSymbolicLink()) await unlink(linkPath).catch(() => {})
-      }
+      await this.detachRunJunctions(source)
       // Release the per-project lock before handing the directory to the OS Recycle Bin (prevents Windows handle/lock conflicts).
       await release()
       release = undefined
-      await this.trashPath(source)
+      await this.trashDirs([source])
       return p
     } finally {
       if (release) await release().catch(() => {})
+      await unlock()
+    }
+  }
+  /** Move all currently archived project directories into the OS Recycle Bin / Trash in a single batch. */
+  async trashArchived(): Promise<{ trashedCount: number; ids: string[] }> {
+    await this.init()
+    const unlock = await lockfile.lock(join(this.root, 'projects'), { retries: { retries: 8, minTimeout: 30, maxTimeout: 60 } })
+    try {
+      const { projects } = await this.listWithWarnings(true)
+      if (projects.length === 0) return { trashedCount: 0, ids: [] }
+      const dirs: string[] = []
+      const ids: string[] = []
+      for (const p of projects) {
+        const source = await this.path(p.id, true)
+        const release = await lockfile.lock(source, { retries: { retries: 8, minTimeout: 30, maxTimeout: 60 } })
+        try {
+          await this.detachRunJunctions(source)
+        } finally {
+          await release()
+        }
+        dirs.push(source)
+        ids.push(p.id)
+      }
+      await this.trashDirs(dirs)
+      return { trashedCount: ids.length, ids }
+    } finally {
+      await unlock()
+    }
+  }
+  /** Move verified corrupted project directories into the OS Recycle Bin / Trash; refuses healthy projects and symlinks. */
+  async trashCorrupted(items?: Array<{ id: string; archived?: boolean }>): Promise<{ trashedCount: number; ids: string[] }> {
+    await this.init()
+    const unlock = await lockfile.lock(join(this.root, 'projects'), { retries: { retries: 8, minTimeout: 30, maxTimeout: 60 } })
+    try {
+      const candidates: Array<{ id: string; archived: boolean }> = []
+      const seen = new Set<string>()
+      const addCandidate = (id: string, archived: boolean) => {
+        const validId = mediaId(id)
+        const key = (archived ? 'a:' : 'p:') + validId
+        if (seen.has(key)) return
+        seen.add(key)
+        candidates.push({ id: validId, archived })
+      }
+      if (items !== undefined) {
+        if (!Array.isArray(items) || items.length > 100) throw new MediaError('损坏工程列表格式无效。', 'BAD_REQUEST')
+        for (const item of items) {
+          if (!item || typeof item !== 'object') throw new MediaError('损坏工程项格式无效。', 'BAD_REQUEST')
+          addCandidate((item as { id?: unknown }).id as string, Boolean((item as { archived?: unknown }).archived))
+        }
+      } else {
+        const [active, archived] = await Promise.all([this.listWithWarnings(false), this.listWithWarnings(true)])
+        for (const c of active.corrupted) addCandidate(c.id, false)
+        for (const c of archived.corrupted) addCandidate(c.id, true)
+      }
+      const dirs: string[] = []
+      const ids: string[] = []
+      for (const candidate of candidates) {
+        const dir = join(this.root, candidate.archived ? 'archives' : 'projects', candidate.id)
+        let info
+        try {
+          info = await lstat(dir)
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException)?.code === 'ENOENT') continue
+          throw error
+        }
+        if (info.isSymbolicLink()) throw new MediaError('项目目录不能是符号链接。', 'STORAGE_UNSAFE')
+        if (!info.isDirectory()) throw new MediaError('清理目标必须是损坏工程目录。', 'STORAGE_UNSAFE')
+        await this.checkPath(dir)
+        let isCorrupt = false
+        try {
+          await this.get(candidate.id, candidate.archived)
+        } catch (error) {
+          const code = (error as { code?: string } | undefined)?.code
+          if (code === 'ENOENT' || code === 'PROJECT_NOT_FOUND') continue
+          isCorrupt = true
+        }
+        if (!isCorrupt) throw new MediaError('该工程当前完好，拒绝作为损坏目录清理。', 'PROJECT_NOT_CORRUPT')
+        await this.detachRunJunctions(dir)
+        dirs.push(dir)
+        ids.push(candidate.id)
+      }
+      if (dirs.length === 0) return { trashedCount: 0, ids: [] }
+      await this.trashDirs(dirs)
+      return { trashedCount: ids.length, ids }
+    } finally {
       await unlock()
     }
   }

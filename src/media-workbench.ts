@@ -9,7 +9,7 @@ import { Readable } from 'node:stream'
 import { StringDecoder } from 'node:string_decoder'
 import lockfile from 'proper-lockfile'
 import { zip, strToU8, type AsyncZippable } from 'fflate'
-import { MediaStore, mediaId, MediaConflict, type TrashPathFn } from './media-store.js'
+import { MediaStore, mediaId, MediaConflict, type TrashPathFn, type TrashPathsFn } from './media-store.js'
 import { MediaError, MEDIA_VERSIONS, MEDIA_TEMPLATES, projectSources, type MediaEngine, type MediaProject } from './media-templates.js'
 import { resolveNpmCli } from './npm-cli.js'
 
@@ -66,7 +66,7 @@ export class MediaWorkbench {
   private jobs = new Map<string, RunningJob>()
   private starting = new Set<MediaJob['kind']>()
   private disposed = false
-  constructor(readonly engine: MediaEngine, root?: string, options?: { trashPath?: TrashPathFn }) { this.store = new MediaStore(engine, root, options); this.route = '/api/dsh-' + engine + '/workbench'; this.runtime = join(this.store.root, 'runtime') }
+  constructor(readonly engine: MediaEngine, root?: string, options?: { trashPath?: TrashPathFn; trashPaths?: TrashPathsFn }) { this.store = new MediaStore(engine, root, options); this.route = '/api/dsh-' + engine + '/workbench'; this.runtime = join(this.store.root, 'runtime') }
   private explicitBrowserEnv(): string {
     return (this.engine === 'hyperframes' ? process.env.HYPERFRAMES_BROWSER_PATH : process.env.REMOTION_BROWSER_EXECUTABLE)?.trim() || ''
   }
@@ -449,11 +449,15 @@ export class MediaWorkbench {
         switch (v.action) {
           case 'list': {
             const [active, archived] = await Promise.all([this.store.listWithWarnings(false), this.store.listWithWarnings(true)])
-            const corruptedCount = active.corrupted.length + archived.corrupted.length
+            const corruptedProjects = [
+              ...active.corrupted.map(item => ({ ...item, archived: false })),
+              ...archived.corrupted.map(item => ({ ...item, archived: true })),
+            ]
+            const corruptedCount = corruptedProjects.length
             value = {
               projects: active.projects,
               archivedProjects: archived.projects,
-              ...(corruptedCount ? { corruptedCount } : {}),
+              ...(corruptedCount ? { corruptedCount, corruptedProjects } : {}),
               templates: MEDIA_TEMPLATES,
               environment: await this.environment(),
               jobs: [...this.jobs.values()].map(j => structuredClone(j.view)),
@@ -490,6 +494,33 @@ export class MediaWorkbench {
               throw error
             })
             try { value = await this.store.trash(id, v.revision, archived) } finally { await unlock() }
+            break
+          }
+          case 'trashArchived': {
+            if (v.confirmed !== true) throw new MediaError('请明确确认清空已归档工程。', 'CONFIRM_REQUIRED')
+            if ([...this.jobs.values()].some(j => j.view.state === 'running')) {
+              throw new MediaConflict('已有预览或渲染正在运行，请先关闭预览或取消渲染，再清空已归档工程。')
+            }
+            const slot = join(this.store.root, 'workbench-slot'); await this.store.init(); await mkdir(slot, { recursive: true })
+            const unlock = await lockfile.lock(slot, { retries: 0, stale: 30000, update: 10000 }).catch(error => {
+              if (error.code === 'ELOCKED') throw new MediaConflict('已有预览或渲染正在运行，请先关闭预览或取消渲染，再清空已归档工程。')
+              throw error
+            })
+            try { value = await this.store.trashArchived() } finally { await unlock() }
+            break
+          }
+          case 'trashCorrupted': {
+            if (v.confirmed !== true) throw new MediaError('请明确确认清理损坏工程目录。', 'CONFIRM_REQUIRED')
+            if (v.items !== undefined && !Array.isArray(v.items)) throw new MediaError('损坏工程列表格式无效。', 'BAD_REQUEST')
+            if ([...this.jobs.values()].some(j => j.view.state === 'running')) {
+              throw new MediaConflict('已有预览或渲染正在运行，请先关闭预览或取消渲染，再清理损坏工程目录。')
+            }
+            const slot = join(this.store.root, 'workbench-slot'); await this.store.init(); await mkdir(slot, { recursive: true })
+            const unlock = await lockfile.lock(slot, { retries: 0, stale: 30000, update: 10000 }).catch(error => {
+              if (error.code === 'ELOCKED') throw new MediaConflict('已有预览或渲染正在运行，请先关闭预览或取消渲染，再清理损坏工程目录。')
+              throw error
+            })
+            try { value = await this.store.trashCorrupted(v.items) } finally { await unlock() }
             break
           }
           case 'prepare': value = await this.start('prepare'); break
