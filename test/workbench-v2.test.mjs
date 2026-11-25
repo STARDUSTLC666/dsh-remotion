@@ -272,7 +272,7 @@ test('Workbench UI v2 integrates @deepseek-ai/dsh-client-ui-primitives lazily an
   const rootSection = hostEnv.findAll(tree, n => n.type === 'section' && n.props?.['data-dsh-style'])[0]
   assert.ok(rootSection, 'workbench root section carries data-dsh-style')
   assert.equal(rootSection.props['data-dsh-style'], 'harness')
-  assert.equal(rootSection.props['data-dsh-font'], 'arcade')
+  assert.equal(rootSection.props['data-dsh-font'], 'auto')
   assert.equal(rootSection.props['data-main'], 'true')
 
   // Switch to New video view and verify host Input primitive is used
@@ -299,7 +299,7 @@ test('Workbench UI v2 integrates @deepseek-ai/dsh-client-ui-primitives lazily an
   const fallbackTree = fallbackEnv.render(fallbackComp, { workbench: true, locale: { getSnapshot: () => ({ active: 'en' }) } })
   const fallbackRoot = fallbackEnv.findAll(fallbackTree, n => n.type === 'section' && n.props?.['data-dsh-style'])[0]
   assert.equal(fallbackRoot.props['data-dsh-style'], 'harness')
-  assert.equal(fallbackRoot.props['data-dsh-font'], 'arcade')
+  assert.equal(fallbackRoot.props['data-dsh-font'], 'auto')
   const icons = fallbackEnv.findAll(fallbackTree, n => n.type === 'svg' && n.props?.['data-dsh-icon'])
   assert.ok(icons.some(svg => svg.props['data-dsh-icon'] === 'plus'))
   assert.ok(icons.some(svg => svg.props['data-dsh-icon'] === 'refresh'))
@@ -323,8 +323,8 @@ test('13-preset StyleSwitcher & 8-preset FontSwitcher (default arcade) sync loca
   const expectedFonts = ['arcade', 'auto', 'songkai', 'fangsong', 'poster', 'retro98', 'serif', 'modern']
   assert.deepEqual([...W.DSH_STYLES.map(s => s.id)], expectedStyles)
   assert.deepEqual([...W.DSH_FONTS.map(f => f.id)], expectedFonts)
-  assert.equal(W.DSH_DEFAULT_FONT, 'arcade')
-  assert.equal(W.readDshFont(env.window), 'arcade')
+  assert.equal(W.DSH_DEFAULT_FONT, 'auto')
+  assert.equal(W.readDshFont(env.window), 'auto')
 
   function StudioFixture() {
     return env.React.createElement('div', null,
@@ -334,7 +334,7 @@ test('13-preset StyleSwitcher & 8-preset FontSwitcher (default arcade) sync loca
 
   let tree = env.render(StudioFixture)
   const rootSection = env.findAll(tree, n => n.type === 'section' && n.props?.['data-dsh-style'])[0]
-  assert.equal(rootSection.props['data-dsh-font'], 'arcade')
+  assert.equal(rootSection.props['data-dsh-font'], 'auto')
 
   const trigger = env.findAll(tree, n => n.type === 'button' && n.props?.className?.includes('dsh-style-trigger'))[0]
   assert.ok(trigger, 'StyleSwitcher trigger renders in Page header')
@@ -398,13 +398,13 @@ test('v3 13 themes, 8 font pairings, deepened materiality, 48px header, sliding 
   assert.match(BUNDLE, /box-shadow:\s*2px 2px 0px #1e2826/, '8-bit crisp pixel shadow present')
   assert.ok(BUNDLE.includes('.dsh-pixel-cursor'), '8-bit active cursor present')
   assert.ok(BUNDLE.includes('.dsh-progress-bar'), 'stepped pixel progress bar present')
-  assert.ok(BUNDLE.includes('backdrop-filter: blur(14px) saturate(140%)'), 'glass frosted backdrop present')
+  assert.ok(BUNDLE.includes('backdrop-filter: blur(24px) saturate(180%)'), 'glass deep frosted backdrop present')
   assert.ok(BUNDLE.includes('#f2f1ec') && BUNDLE.includes('#171716'), 'eink paper & charcoal tokens present')
   assert.ok(BUNDLE.includes('#eaf3fb') && BUNDLE.includes('#0d3b66') && BUNDLE.includes('#e05a2b'), 'blueprint cyanotype tokens present')
   assert.ok(BUNDLE.includes('#faf6ee') && BUNDLE.includes('#ff3e7f') && BUNDLE.includes('#fde047'), 'risograph zine tokens present')
-  assert.ok(BUNDLE.includes('#dcdcdc') && BUNDLE.includes('#1b4f9c'), 'win98 retro tokens present')
+  assert.ok(BUNDLE.includes('#eff1f5') && BUNDLE.includes('#005fb8'), 'win98 Mica Fluent tokens present')
   assert.ok(BUNDLE.includes('#f7f3e8') && BUNDLE.includes('#b83b2a'), 'songhui xuan tokens present')
-  assert.ok(BUNDLE.includes('#eaf7ff') && BUNDLE.includes('#0284c7'), 'frutiger aqua tokens present')
+  assert.ok(BUNDLE.includes('#e4f4ff') && BUNDLE.includes('#0284c7'), 'frutiger aqua crystal tokens present')
   assert.ok(BUNDLE.includes('#f6f3ec') && BUNDLE.includes('#9b1c1c') && BUNDLE.includes('4px double #161514'), 'gazette broadsheet tokens present')
 
   // 2b. All 8 [data-dsh-font] overrides + dual-layer typography variables
