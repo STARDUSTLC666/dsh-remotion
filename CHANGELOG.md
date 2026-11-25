@@ -1,5 +1,10 @@
 # 更新记录
 
+## 0.13.4 (2026-11-25)
+
+- 预览启动探测在重试及就绪时都释放响应体，避免轮询保留网络连接；与 HyperFrames 共享源保持同步并覆盖两种引擎。
+- Release response bodies from both unsuccessful and ready preview probes so polling does not retain network connections, keeping the shared source and regression coverage aligned with HyperFrames.
+
 ## 0.13.3 (2026-11-24)
 
 - **损坏目录清理与一键清空已归档**：黄色损坏工程提示条新增 **「查看并移入回收站清理」** 入口与确认弹窗（`trashCorrupted`），后端二次校验仅清理真实损坏目录并拒绝完好工程（`PROJECT_NOT_CORRUPT`）；「已归档」页新增 **「清空已归档（全部移入回收站）」**（`trashArchived`），支持单次批量移入系统回收站并自动分离残留 `runs/*/node_modules` 联接（与 `dsh-hyperframes` 共享源保持完全同步）。
