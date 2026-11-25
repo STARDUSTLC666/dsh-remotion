@@ -292,7 +292,7 @@ export class MediaWorkbench {
           const poll = async () => {
             for (let i = 0; i < 180; i++) {
               job.controller.signal.throwIfAborted(); if (exited) return
-              try { const response = await fetch(url, { signal: AbortSignal.timeout(1500) }); if (response.ok) { job.view.url = this.engine === 'hyperframes' ? url + '#project/' + job.view.id : url; this.setStage(job, 'preview-ready', '官方预览已就绪'); return } } catch {}
+              try { const response = await fetch(url, { signal: AbortSignal.timeout(1500) }); const ready = response.ok; await response.body?.cancel().catch(() => {}); if (ready) { job.view.url = this.engine === 'hyperframes' ? url + '#project/' + job.view.id : url; this.setStage(job, 'preview-ready', '官方预览已就绪'); return } } catch {}
               await new Promise(resolve => setTimeout(resolve, 500))
             }
             job.abortReason ??= 'startup-timeout'

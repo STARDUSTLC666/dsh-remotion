@@ -56,6 +56,40 @@ async function fakeRuntime(w, source) {
   await writeFile(join(pkg, 'package.json'), JSON.stringify({ version: MEDIA_VERSIONS.remotion })); await writeFile(join(w.runtime, 'ready.json'), JSON.stringify({ version: MEDIA_VERSIONS.remotion, browserPath }))
   await writeFile(join(pkg, 'remotion-cli.js'), source)
 }
+test('preview readiness probes cancel non-ready and ready response bodies for both engines', async t => {
+  for (const engine of ['hyperframes', 'remotion']) {
+    await t.test(engine, async t => {
+      const { workbench: w, store } = await fixture(t, engine), project = await store.create(fields)
+      const source = `if(process.argv[2]==='init')process.exit(0);const http=process.getBuiltinModule('node:http');const i=process.argv.indexOf('--port');http.createServer((_q,r)=>r.end('ready')).listen(Number(process.argv[i+1]),'127.0.0.1')`
+      const browserPath = join(w.runtime, 'chrome-headless-shell.exe')
+      await mkdir(w.runtime, { recursive: true }); await writeFile(browserPath, 'fixture')
+      if (engine === 'hyperframes') {
+        const pkg = join(w.runtime, 'node_modules/hyperframes'), cli = join(pkg, 'bin/hyperframes.mjs')
+        await mkdir(dirname(cli), { recursive: true }); await writeFile(join(pkg, 'package.json'), JSON.stringify({ version: MEDIA_VERSIONS.hyperframes }))
+        await writeFile(cli, source); await mkdir(join(w.runtime, 'node_modules/gsap/dist'), { recursive: true }); await writeFile(join(w.runtime, 'node_modules/gsap/dist/gsap.min.js'), '')
+        await writeFile(join(w.runtime, 'ready.json'), JSON.stringify({ version: MEDIA_VERSIONS.hyperframes, browserPath, prerequisites: 2 }))
+      } else {
+        await fakeRuntime(w, source)
+        await writeFile(join(w.runtime, 'ready.json'), JSON.stringify({ version: MEDIA_VERSIONS.remotion, browserPath }))
+      }
+      const originalFetch = globalThis.fetch, cancelled = [], jobIds = []
+      let attempts = 0
+      globalThis.fetch = async () => {
+        const status = attempts++ === 0 ? 503 : 200
+        return new Response(new ReadableStream({ start(controller) { controller.enqueue(new Uint8Array([1])) }, cancel() { cancelled.push(status) } }), { status })
+      }
+      try {
+        const job = await w.start('preview', project.id, project.revision); jobIds.push(job.id)
+        for (let i = 0; i < 1500 && attempts < 2 && w.job(job.id).state === 'running'; i++) await new Promise(resolve => setTimeout(resolve, 10))
+        assert.equal(attempts, 2, 'probe should retry once before readiness')
+        assert.deepEqual(cancelled, [503, 200])
+      } finally {
+        globalThis.fetch = originalFetch
+        for (const id of jobIds) { w.cancel(id); await finished(w, id) }
+      }
+    })
+  }
+})
 test('project revisions persist and competing writers cannot silently overwrite', async t => {
   const { store, root } = await fixture(t), p = await store.create(fields), other = new MediaStore('remotion', root)
   const results = await Promise.allSettled([store.update(p.id, p.revision, { ...fields, title: '窗口一' }), other.update(p.id, p.revision, { ...fields, title: '窗口二' })])
