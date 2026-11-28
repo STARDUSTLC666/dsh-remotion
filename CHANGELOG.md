@@ -1,5 +1,10 @@
 # 更新记录
 
+## 0.13.5 (2026-11-28)
+
+- 更新详情页现在会保留较新检查的结果，慢轮询返回时不再把版本或任务状态退回旧值。
+- Keep newer update-check results and job status when an older background request finishes later.
+
 ## 0.13.4 (2026-11-25)
 
 - 预览启动探测在重试及就绪时都释放响应体，避免轮询保留网络连接；与 HyperFrames 共享源保持同步并覆盖两种引擎。
